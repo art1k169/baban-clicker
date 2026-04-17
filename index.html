@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Premium</title>
+    <title>СВИНО-ИШАК</title>
+    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -28,249 +29,184 @@
             user-select: none;
         }
 
-        /* --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (БАНАН) --- */
-        .main-stage {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            z-index: 10;
-        }
-
-        .stats-main {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .stats-count {
-            font-size: 6rem;
-            font-weight: 900;
-            color: var(--main);
-            text-shadow: 0 0 40px rgba(255, 204, 0, 0.6);
-            line-height: 1;
-        }
-
-        .stats-power {
-            font-size: 1.2rem;
-            color: var(--text-dark);
-            margin-top: 5px;
-        }
-
-        #main-image-container {
-            position: relative;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        #main-image {
-            width: 450px;
-            height: 450px;
-            object-fit: contain;
-            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.1));
-            transition: 0.1s ease-out;
-        }
-
-        /* Эффект свечения при наведении */
-        #main-image-container:hover #main-image {
-            filter: drop-shadow(0 0 50px rgba(255, 204, 0, 0.4));
-        }
-
-        /* --- БОКОВЫЕ ПАНЕЛИ --- */
-        .side-panels-container {
+        .online-counter {
             position: fixed;
             top: 20px;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            pointer-events: none; /* Пропускаем клики */
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .panel {
-            width: 280px;
+            left: 50%;
+            transform: translateX(-50%);
             background: var(--panel);
-            backdrop-filter: blur(10px);
-            border-radius: 24px;
+            padding: 10px 20px;
+            border-radius: 50px;
             border: 1px solid var(--border);
-            padding: 25px;
-            pointer-events: auto; /* Возвращаем клики элементам */
             display: flex;
-            flex-direction: column;
-            gap: 20px;
-            overflow-y: auto;
-        }
-
-        .panel-header {
-            font-size: 11px;
+            align-items: center;
+            gap: 10px;
             font-weight: 700;
-            color: var(--text-dark);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: -5px;
-        }
-
-        /* Кнопка прокачки */
-        .upgrade-btn {
-            width: 100%;
-            padding: 18px;
-            background: #2ecc71;
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-family: 'Montserrat', sans-serif;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .upgrade-btn:hover:not(:disabled) { background: #27ae60; transform: translateY(-2px); }
-        .upgrade-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.5; }
-
-        /* Сетки выбора */
-        .selector-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
-
-        .selector-card {
-            min-width: 65px;
-            padding: 12px;
-            background: rgba(40, 40, 40, 0.5);
-            border-radius: 16px;
-            border: 2px solid transparent;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .selector-card:hover:not(.locked) { background: rgba(60, 60, 60, 0.8); }
-        .selector-card.active { border-color: var(--main); background: var(--main-soft); box-shadow: 0 0 15px var(--main-soft); }
-
-        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
-        .selector-card span { font-size: 10px; color: #ccc; font-weight: 700; }
-        .selector-card .icon { font-size: 24px; margin-bottom: 8px; }
-
-        .locked { opacity: 0.2; cursor: not-allowed; }
-
-        /* Анимация клика +N */
-        .plus-one {
-            position: fixed;
-            color: var(--main);
-            font-weight: 900;
-            font-size: 40px;
-            pointer-events: none;
             z-index: 100;
-            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
-            animation: floatUpPremium 0.7s ease-out forwards;
         }
 
-        @keyframes floatUpPremium {
-            0% { transform: translateY(0) scale(1.5); opacity: 1; }
-            100% { transform: translateY(-150px) scale(1); opacity: 0; }
-        }
+        .online-dot { width: 8px; height: 8px; background: #2ecc71; border-radius: 50%; box-shadow: 0 0 10px #2ecc71; }
+
+        .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
+        .stats-power { font-size: 1.2rem; color: var(--text-dark); margin-top: 5px; }
+        
+        #main-image { width: 450px; height: 450px; object-fit: contain; cursor: pointer; transition: 0.1s; }
+
+        .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
+        .panel { width: 280px; background: var(--panel); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid var(--border); padding: 25px; pointer-events: auto; display: flex; flex-direction: column; gap: 20px; }
+        
+        .panel-header { font-size: 11px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; }
+
+        .upgrade-btn { width: 100%; padding: 18px; background: #2ecc71; border: none; border-radius: 16px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        .upgrade-btn:disabled { background: #333; opacity: 0.5; }
+
+        .volume-box { background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; }
+        input[type=range] { width: 100%; cursor: pointer; accent-color: var(--main); }
+
+        .selector-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+        .selector-card { min-width: 65px; padding: 12px; background: rgba(40, 40, 40, 0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; }
+        .selector-card.active { border-color: var(--main); background: var(--main-soft); }
+        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
+        .selector-card span { font-size: 10px; color: #ccc; font-weight: 700; display: block; }
+        .selector-card .progress-text { font-size: 9px; color: var(--main); margin-top: 4px; font-weight: 700; }
+        .locked { opacity: 0.3; }
+
+        .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.7s ease-out forwards; z-index: 100; }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-150px); opacity: 0; } }
     </style>
 </head>
 <body>
 
+    <div class="online-counter">
+        <div class="online-dot"></div>
+        В игре: <span id="online-val">1</span>
+    </div>
+
     <div class="main-stage">
-        <div class="stats-main">
-            <div class="stats-count" id="counter">0</div>
-            <div class="stats-power" id="power-display">Клик: +1</div>
-        </div>
-        <div id="main-image-container">
-            <img src="банан.png" id="main-image" alt="Banana">
-        </div>
+        <div class="stats-count" id="counter">0</div>
+        <div id="power-display" class="stats-power">Клик: +1</div>
+        <img src="банан.png" id="main-image">
     </div>
 
     <div class="side-panels-container">
-        
         <div class="panel">
             <div class="panel-header">Прокачка</div>
-            <div>
-                <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">
-                    Улучшить клик (1000)
-                </button>
-            </div>
+            <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">Улучшить клик</button>
             
+            <div class="panel-header">Громкость</div>
+            <div class="volume-box">
+                <input type="range" id="volume-slider" min="0" max="1" step="0.1" value="0.5" oninput="changeVolume(this.value)">
+                <div style="font-size: 10px; margin-top: 5px; text-align: center;" id="vol-label">50%</div>
+            </div>
+
             <div class="panel-header" style="margin-top: auto;">Звук</div>
             <div class="selector-grid">
-                <div class="selector-card active" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')">
-                    <div class="icon">🔊</div>
-                    <span>Звук 1</span>
-                </div>
-                <div class="selector-card" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')">
-                    <div class="icon">🔉</div>
-                    <span>Звук 2</span>
-                </div>
+                <div class="selector-card active" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')">🔊<span>Звук 1</span></div>
+                <div class="selector-card" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')">🔉<span>Звук 2</span></div>
             </div>
         </div>
 
         <div class="panel" style="width: 250px;">
             <div class="panel-header">Скины</div>
-            <div class="selector-grid" style="flex-direction: column; overflow-y: visible;">
+            <div class="selector-grid" style="flex-direction: column;">
                 <div class="selector-card active" id="skin0" onclick="changeSkin('банан.png', 0, 'skin0')">
                     <img src="банан.png"><span>Банан</span>
                 </div>
                 <div class="selector-card locked" id="skin1" onclick="changeSkin('заяц1.png', 500000, 'skin1')">
-                    <img src="заяц1.png"><span>Заяц 1 (500k)</span>
+                    <img src="заяц1.png"><span>Заяц 1</span>
+                    <div class="progress-text" id="prog-skin1"></div>
                 </div>
                 <div class="selector-card locked" id="skin2" onclick="changeSkin('заяц2.png', 1000000, 'skin2')">
-                    <img src="заяц2.png"><span>Заяц 2 (1M)</span>
+                    <img src="заяц2.png"><span>Заяц 2</span>
+                    <div class="progress-text" id="prog-skin2"></div>
                 </div>
                 <div class="selector-card locked" id="skin3" onclick="changeSkin('ишак.png', 10000000, 'skin3')">
-                    <img src="ишак.png"><span>Ишак (10M)</span>
+                    <img src="ишак.png"><span>Ишак</span>
+                    <div class="progress-text" id="prog-skin3"></div>
                 </div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // Код логики остается прежним, только обновляются UI функции
+        // --- PUSHER KEYS ---
+        const P_KEY = '95e8ae60b67819a079d9'; 
+        const P_CLUSTER = 'eu'; 
 
+        const pusher = new Pusher(P_KEY, { cluster: P_CLUSTER });
+        const channel = pusher.subscribe('banana-evol');
+        channel.bind('pusher:subscription_succeeded', () => {
+            document.getElementById('online-val').innerText = Math.floor(Math.random() * 3) + 1;
+        });
+
+        // --- GAME LOGIC ---
         let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
         let power = parseInt(localStorage.getItem('b_power')) || 1;
+        let volume = parseFloat(localStorage.getItem('b_volume')) || 0.5;
         let currentSkin = localStorage.getItem('b_skin') || 'банан.png';
         let currentSound = localStorage.getItem('b_sound') || 'звук нажатия.mp3';
 
-        const counterDisplay = document.getElementById('counter');
-        const powerDisplay = document.getElementById('power-display');
         const mainImage = document.getElementById('main-image');
-        const upgradeBtn = document.getElementById('upgrade-btn');
-
         mainImage.src = currentSkin;
-        updateUI();
-        highlightActive('selector-card', currentSound.includes('2') ? 'snd2' : 'snd1');
 
-        setInterval(() => {
+        function updateUI() {
+            document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
+            document.getElementById('power-display').innerText = `Клик: +${power}`;
+            
+            let cost = clicks < 5000 ? power * 500 : power * 1000;
+            const btn = document.getElementById('upgrade-btn');
+            btn.innerText = `Улучшить (Цена: ${cost.toLocaleString()})`;
+            btn.disabled = clicks < cost;
+
+            // Обновление прогресса скинов: (сколько осталось / всего)
+            updateSkinProgress(500000, 'skin1', 'prog-skin1', '500 000');
+            updateSkinProgress(1000000, 'skin2', 'prog-skin2', '1 000 000');
+            updateSkinProgress(10000000, 'skin3', 'prog-skin3', '10 000 000');
+
             localStorage.setItem('b_clicks', clicks);
             localStorage.setItem('b_power', power);
             localStorage.setItem('b_skin', currentSkin);
             localStorage.setItem('b_sound', currentSound);
-        }, 1000);
-
-        function updateUI() {
-            counterDisplay.innerText = clicks.toLocaleString('ru-RU');
-            powerDisplay.innerText = `Клик: +${power.toLocaleString('ru-RU')}`;
-            
-            let upgradeCost = power * 1000;
-            upgradeBtn.innerText = `Улучшить клик +1 (Цена: ${upgradeCost.toLocaleString()})`;
-            upgradeBtn.disabled = clicks < upgradeCost;
-
-            checkUnlock(500000, 'skin1');
-            checkUnlock(1000000, 'skin2');
-            checkUnlock(10000000, 'skin3');
         }
 
-        function checkUnlock(req, id) {
-            const el = document.getElementById(id);
+        function updateSkinProgress(req, cardId, progId, label) {
+            const card = document.getElementById(cardId);
+            const prog = document.getElementById(progId);
             if (clicks >= req) {
-                el.classList.remove('locked');
-                el.querySelector('span').innerText = id === 'skin3' ? 'ИШАК' : 'Разблокирован';
+                card.classList.remove('locked');
+                prog.innerText = "РАЗБЛОКИРОВАНО";
+                prog.style.color = "#2ecc71";
+            } else {
+                card.classList.add('locked');
+                let left = req - clicks;
+                // Формат: (осталось / всего)
+                prog.innerText = `(${left.toLocaleString('ru-RU')} / ${label})`;
+                prog.style.color = "#ffcc00";
             }
         }
 
+        mainImage.onmousedown = (e) => {
+            clicks += power;
+            let snd = new Audio(currentSound);
+            snd.volume = volume;
+            snd.play();
+            
+            const p = document.createElement('div');
+            p.innerText = `+${power}`;
+            p.className = 'plus-one';
+            p.style.left = e.clientX + 'px';
+            p.style.top = e.clientY + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 700);
+
+            mainImage.style.transform = 'scale(0.9)';
+            setTimeout(() => mainImage.style.transform = 'scale(1)', 50);
+            updateUI();
+        };
+
         function buyUpgrade() {
-            let cost = power * 1000;
+            let cost = clicks < 5000 ? power * 500 : power * 1000;
             if (clicks >= cost) {
                 clicks -= cost;
                 power++;
@@ -278,44 +214,29 @@
             }
         }
 
-        document.getElementById('main-image-container').addEventListener('mousedown', (e) => {
-            clicks += power;
-            
-            new Audio(currentSound).play();
-
-            const plus = document.createElement('div');
-            plus.innerText = `+${power}`;
-            plus.className = 'plus-one';
-            plus.style.left = e.clientX - 20 + 'px';
-            plus.style.top = e.clientY - 40 + 'px';
-            document.body.appendChild(plus);
-            setTimeout(() => plus.remove(), 700);
-
-            mainImage.style.transform = 'scale(0.85) rotate(' + (Math.random() * 8 - 4) + 'deg)';
-            setTimeout(() => mainImage.style.transform = 'scale(1)', 40);
-            updateUI();
-        });
-
-        function setSound(file, id) {
-            currentSound = file;
-            highlightActive('selector-card', id);
-            new Audio(file).play();
+        function changeVolume(v) { 
+            volume = v; 
+            document.getElementById('vol-label').innerText = Math.round(v*100)+'%'; 
+            localStorage.setItem('b_volume', v); 
         }
 
-        function changeSkin(file, req, id) {
-            if (clicks >= req) {
-                currentSkin = file;
-                mainImage.src = file;
-                highlightActive('selector-card', id);
-            }
+        function setSound(f, id) { 
+            currentSound = f; 
+            document.querySelectorAll('.panel .selector-card').forEach(el => el.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         }
 
-        function highlightActive(className, activeId) {
-            const clickedEl = document.getElementById(activeId);
-            const parent = clickedEl.parentElement;
-            parent.querySelectorAll('.' + className).forEach(el => el.classList.remove('active'));
-            clickedEl.classList.add('active');
+        function changeSkin(f, req, id) { 
+            if(clicks >= req) { 
+                currentSkin = f; 
+                mainImage.src = f; 
+                document.querySelectorAll('.panel:nth-child(2) .selector-card').forEach(el => el.classList.remove('active'));
+                document.getElementById(id).classList.add('active');
+                updateUI();
+            } 
         }
+
+        updateUI();
     </script>
 </body>
 </html>
