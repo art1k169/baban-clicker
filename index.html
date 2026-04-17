@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Shop Edition</title>
+    <title>Banana Clicker: Ultimate Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,6 +14,8 @@
             --border: rgba(50, 50, 50, 0.5);
             --text-dark: #888;
             --danger: #ff4757;
+            --success: #2ecc71;
+            --blue: #3498db;
         }
 
         body {
@@ -29,23 +31,24 @@
             user-select: none;
         }
 
-        /* --- Стили для модального окна (Уведомления) --- */
+        /* --- Модальное окно --- */
         #custom-alert {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%) scale(0.9);
             background: var(--panel);
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             border: 1px solid var(--border);
-            padding: 30px;
-            border-radius: 24px;
+            padding: 35px;
+            border-radius: 30px;
             z-index: 1000;
             text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.7);
             opacity: 0;
             pointer-events: none;
             transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+            min-width: 300px;
         }
 
         #custom-alert.show {
@@ -54,89 +57,92 @@
             transform: translate(-50%, -50%) scale(1);
         }
 
-        #custom-alert h2 { margin: 0 0 10px; font-size: 18px; color: var(--danger); }
-        #custom-alert p { margin: 0 0 20px; color: #ccc; font-size: 14px; }
+        #custom-alert h2 { margin: 0 0 10px; font-size: 22px; color: var(--main); }
+        #custom-alert p { margin: 0 0 25px; color: #ccc; font-size: 15px; line-height: 1.5; }
         
         .alert-btn {
             background: var(--main);
             color: black;
             border: none;
-            padding: 10px 25px;
-            border-radius: 12px;
-            font-weight: 700;
+            padding: 12px 35px;
+            border-radius: 15px;
+            font-weight: 900;
             cursor: pointer;
             transition: 0.2s;
+            text-transform: uppercase;
+            font-size: 12px;
         }
-        .alert-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--main-soft); }
+        .alert-btn:hover { transform: scale(1.05); background: #fff; }
 
-        /* --- Основной интерфейс --- */
+        /* --- Интерфейс --- */
         .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
         .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
-        .stats-power { font-size: 1.1rem; color: var(--text-dark); margin-top: 5px; display: flex; gap: 20px; }
+        .stats-power { font-size: 1.1rem; color: var(--text-dark); margin-top: 10px; display: flex; gap: 25px; font-weight: 700; }
         
-        #main-image { width: 400px; height: 400px; object-fit: contain; cursor: pointer; transition: 0.1s; }
+        #main-image { width: 400px; height: 400px; object-fit: contain; cursor: pointer; transition: transform 0.1s; }
 
         .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
-        .panel { width: 280px; background: var(--panel); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid var(--border); padding: 25px; pointer-events: auto; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .panel { width: 300px; background: var(--panel); backdrop-filter: blur(12px); border-radius: 28px; border: 1px solid var(--border); padding: 25px; pointer-events: auto; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         
-        .panel-header { font-size: 11px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; }
+        .panel-header { font-size: 11px; font-weight: 900; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid var(--border); padding-bottom: 10px; margin-bottom: 5px; }
 
-        .upgrade-btn { width: 100%; padding: 15px; background: #2ecc71; border: none; border-radius: 16px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 13px; }
-        .upgrade-btn.auto { background: #3498db; }
-        .upgrade-btn:disabled { background: #333; opacity: 0.5; cursor: not-allowed; }
+        .upgrade-btn { width: 100%; padding: 18px; background: var(--success); border: none; border-radius: 18px; color: white; font-weight: 800; cursor: pointer; transition: 0.3s; font-size: 13px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+        .upgrade-btn.auto { background: var(--blue); }
+        .upgrade-btn:disabled { background: #333; opacity: 0.4; cursor: not-allowed; }
 
-        .selector-grid { display: flex; flex-direction: column; gap: 10px; }
-        .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; position: relative; }
+        .selector-grid { display: flex; flex-direction: column; gap: 12px; }
+        .selector-card { padding: 15px; background: rgba(255,255,255,0.03); border-radius: 20px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; position: relative; }
         .selector-card.active { border-color: var(--main); background: var(--main-soft); }
-        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
-        .selector-card span { font-size: 10px; color: #ccc; font-weight: 700; display: block; }
+        .selector-card img { width: 50px; height: 50px; display: block; margin: 0 auto 10px; border-radius: 10px; }
+        .selector-card span { font-size: 11px; color: #eee; font-weight: 700; display: block; }
         
-        .price-tag { font-size: 10px; color: var(--main); font-weight: 900; margin-top: 5px; }
-        .status-tag { font-size: 9px; color: #2ecc71; font-weight: 700; margin-top: 5px; }
+        .price-tag { font-size: 10px; color: var(--main); font-weight: 900; margin-top: 8px; background: rgba(255,204,0,0.1); padding: 4px; border-radius: 6px; }
+        .status-tag { font-size: 10px; color: var(--success); font-weight: 800; margin-top: 8px; }
         
-        .locked-overlay { filter: grayscale(1) brightness(0.5); }
+        .locked-overlay { filter: grayscale(1) brightness(0.4); }
 
-        .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.7s ease-out forwards; z-index: 100; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-150px); opacity: 0; } }
+        .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 45px; pointer-events: none; animation: floatUp 0.8s ease-out forwards; z-index: 100; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-180px) scale(1.2); opacity: 0; } }
     </style>
 </head>
 <body>
 
     <div id="custom-alert">
-        <h2 id="alert-title">Внимание</h2>
+        <h2 id="alert-title">Уведомление</h2>
         <p id="alert-msg">Текст сообщения</p>
-        <button class="alert-btn" onclick="closeAlert()">Понятно</button>
+        <button class="alert-btn" onclick="closeAlert()">Принять</button>
     </div>
 
     <div class="main-stage">
         <div class="stats-count" id="counter">0</div>
         <div class="stats-power">
             <span id="power-display">Клик: +1</span>
-            <span id="auto-display" style="color: #3498db;">Авто: +0/сек</span>
+            <span id="auto-display" style="color: var(--blue);">Авто: +0/сек</span>
         </div>
         <img src="банан.png" id="main-image">
     </div>
 
     <div class="side-panels-container">
         <div class="panel">
-            <div class="panel-header">Улучшения</div>
+            <div class="panel-header">Прокачка</div>
             <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">Клик +1</button>
             <button class="upgrade-btn auto" id="auto-upgrade-btn" onclick="buyAutoUpgrade()">Авто-клик +1</button>
             
-            <div class="panel-header" style="margin-top: auto;">Звук</div>
+            <div class="panel-header" style="margin-top: 20px;">Звуки клика</div>
             <div style="display:flex; gap:10px">
-                <div class="selector-card active" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')" style="flex:1">🔊<span>Звук 1</span></div>
-                <div class="selector-card" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')" style="flex:1">🔉<span>Звук 2</span></div>
+                <div class="selector-card active" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')" style="flex:1">🔊<span>Вариант 1</span></div>
+                <div class="selector-card" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')" style="flex:1">🔉<span>Вариант 2</span></div>
             </div>
         </div>
 
-        <div class="panel" style="width: 250px;">
+        <div class="panel">
             <div class="panel-header">Магазин скинов</div>
             <div class="selector-grid" id="skin-list"></div>
         </div>
     </div>
 
     <script>
+        // --- Данные игры ---
         let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
         let power = parseInt(localStorage.getItem('b_power')) || 1;
         let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
@@ -144,21 +150,26 @@
         let currentSound = localStorage.getItem('b_sound') || 'звук нажатия.mp3';
         let unlockedSkins = JSON.parse(localStorage.getItem('b_unlocked')) || ['skin0'];
 
+        // --- Анти-чит переменные ---
+        let lastClickTime = 0;
+        let clickIntervals = [];
+        let isFrozen = false;
+
         const skinsDB = [
-            { id: 'skin0', name: 'Обычный Банан', file: 'банан.png', price: 0 },
+            { id: 'skin0', name: 'Классика', file: 'банан.png', price: 0 },
             { id: 'skin_pupu', name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
             { id: 'skin_burm', name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
-            { id: 'skin1', name: 'Заяц 1', file: 'заяц1.png', price: 500000 },
-            { id: 'skin2', name: 'Заяц 2', file: 'заяц2.png', price: 1000000 },
-            { id: 'skin_bak', name: 'Бак', file: 'бак.png', price: 1000000 },
-            { id: 'skin3', name: 'Ишак', file: 'ишак.png', price: 10000000 },
+            { id: 'skin1', name: 'Заяц Беляк', file: 'заяц1.png', price: 500000 },
+            { id: 'skin2', name: 'Заяц Толстяк', file: 'заяц2.png', price: 1000000 },
+            { id: 'skin_bak', name: 'Бак-ракета', file: 'бак.png', price: 1000000 },
+            { id: 'skin3', name: 'Ишак-герой', file: 'ишак.png', price: 10000000 },
             { id: 'skin_svin', name: 'Свинобан', file: 'свинобан.png', price: 20000000 }
         ];
 
         const mainImage = document.getElementById('main-image');
         mainImage.src = currentSkin;
 
-        // Функции модального окна
+        // --- Управление уведомлениями ---
         function showAlert(title, msg) {
             document.getElementById('alert-title').innerText = title;
             document.getElementById('alert-msg').innerText = msg;
@@ -169,6 +180,7 @@
             document.getElementById('custom-alert').classList.remove('show');
         }
 
+        // --- Логика автокликера ---
         setInterval(() => {
             if (autoPower > 0) {
                 clicks += autoPower;
@@ -176,6 +188,27 @@
             }
         }, 1000);
 
+        // --- Обновление интерфейса ---
+        function updateUI() {
+            document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
+            document.getElementById('power-display').innerText = `Клик: +${power}`;
+            document.getElementById('auto-display').innerText = `Авто: +${autoPower}/сек`;
+            
+            let upCost = power * 1000;
+            let autoCost = (autoPower + 1) * 10000;
+
+            document.getElementById('upgrade-btn').innerText = `Улучшить клик (${upCost.toLocaleString()})`;
+            document.getElementById('upgrade-btn').disabled = clicks < upCost;
+            document.getElementById('auto-upgrade-btn').innerText = `Авто-клик +1 (${autoCost.toLocaleString()})`;
+            document.getElementById('auto-upgrade-btn').disabled = clicks < autoCost;
+
+            localStorage.setItem('b_clicks', clicks);
+            localStorage.setItem('b_power', power);
+            localStorage.setItem('b_auto_power', autoPower);
+            renderSkins();
+        }
+
+        // --- Магазин скинов ---
         function renderSkins() {
             const container = document.getElementById('skin-list');
             container.innerHTML = '';
@@ -188,7 +221,7 @@
                 card.innerHTML = `
                     <img src="${skin.file}" class="${!isUnlocked ? 'locked-overlay' : ''}">
                     <span>${skin.name}</span>
-                    ${isUnlocked ? '<div class="status-tag">ВЫБРАТЬ</div>' : `<div class="price-tag">КУПИТЬ: ${skin.price.toLocaleString()}</div>`}
+                    ${isUnlocked ? '<div class="status-tag">ВЫБРАНО</div>' : `<div class="price-tag">КУПИТЬ: ${skin.price.toLocaleString()}</div>`}
                 `;
                 container.appendChild(card);
             });
@@ -208,36 +241,39 @@
                     mainImage.src = skin.file;
                     localStorage.setItem('b_skin', skin.file);
                 } else {
-                    // Используем наше новое окно вместо alert
-                    showAlert('Ошибка', 'Недостаточно кликов для покупки этого скина!');
+                    showAlert('Магазин', 'У вас недостаточно кликов для приобретения этого скина.');
                 }
             }
             updateUI();
         }
 
-        function updateUI() {
-            document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
-            document.getElementById('power-display').innerText = `Клик: +${power}`;
-            document.getElementById('auto-display').innerText = `Авто: +${autoPower}/сек`;
-            
-            let upCost = power * 1000;
-            let autoCost = (autoPower + 1) * 10000;
-
-            document.getElementById('upgrade-btn').innerText = `Клик +1 (${upCost.toLocaleString()})`;
-            document.getElementById('upgrade-btn').disabled = clicks < upCost;
-            document.getElementById('auto-upgrade-btn').innerText = `Авто +1 (${autoCost.toLocaleString()})`;
-            document.getElementById('auto-upgrade-btn').disabled = clicks < autoCost;
-
-            localStorage.setItem('b_clicks', clicks);
-            localStorage.setItem('b_power', power);
-            localStorage.setItem('b_auto_power', autoPower);
-            renderSkins();
-        }
-
+        // --- Основной клик и Анти-чит ---
         document.body.onmousedown = (e) => {
-            if(e.target.id !== 'main-image') return;
+            if(e.target.id !== 'main-image' || isFrozen) return;
+
+            const now = Date.now();
+            
+            // Анти-чит: Проверка интервала (защита от мгновенных кликов)
+            if (now - lastClickTime < 15) {
+                activateAntiCheat("Слишком быстрые нажатия!");
+                return;
+            }
+
+            // Анти-чит: Подсчет кликов в секунду (CPS)
+            clickIntervals.push(now);
+            clickIntervals = clickIntervals.filter(t => now - t < 1000);
+            if (clickIntervals.length > 15) {
+                activateAntiCheat("Обнаружен автокликер!");
+                return;
+            }
+
+            lastClickTime = now;
+
+            // Логика клика
             clicks += power;
             new Audio(currentSound).play();
+            
+            // Анимация вылетающей цифры
             const p = document.createElement('div');
             p.innerText = `+${power}`;
             p.className = 'plus-one';
@@ -245,21 +281,47 @@
             p.style.top = e.clientY + 'px';
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
-            mainImage.style.transform = 'scale(0.85)';
+
+            // Анимация банана
+            mainImage.style.transform = 'scale(0.88)';
             setTimeout(() => mainImage.style.transform = 'scale(1)', 50);
+            
             updateUI();
         };
 
+        function activateAntiCheat(reason) {
+            isFrozen = true;
+            mainImage.style.filter = 'grayscale(1) brightness(0.3)';
+            showAlert('Анти-чит', `Обнаружена подозрительная активность: ${reason}. Работа заблокирована на 5 секунд.`);
+            
+            setTimeout(() => {
+                isFrozen = false;
+                mainImage.style.filter = 'none';
+                closeAlert();
+                clickIntervals = [];
+            }, 5000);
+        }
+
+        // --- Покупка улучшений ---
         function buyUpgrade() {
             let cost = power * 1000;
-            if (clicks >= cost) { clicks -= cost; power++; updateUI(); }
+            if (clicks >= cost) {
+                clicks -= cost;
+                power++;
+                updateUI();
+            }
         }
 
         function buyAutoUpgrade() {
             let cost = (autoPower + 1) * 10000;
-            if (clicks >= cost) { clicks -= cost; autoPower++; updateUI(); }
+            if (clicks >= cost) {
+                clicks -= cost;
+                autoPower++;
+                updateUI();
+            }
         }
 
+        // --- Смена звука ---
         function setSound(f, id) { 
             currentSound = f; 
             localStorage.setItem('b_sound', f);
@@ -267,6 +329,7 @@
             document.getElementById(id).classList.add('active');
         }
 
+        // Инициализация
         updateUI();
     </script>
 </body>
