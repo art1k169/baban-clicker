@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Pro Edition</title>
+    <title>Banana Evolution: Active Mode</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -52,19 +52,9 @@
         #custom-alert.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
         .alert-btn { background: var(--main); color: black; border: none; padding: 10px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 15px; }
 
-        /* --- Регулировка звука --- */
-        .volume-control {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        input[type="range"] {
-            width: 100%;
-            cursor: pointer;
-            accent-color: var(--main);
-        }
+        /* --- Настройки --- */
+        .volume-control { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--main); }
 
         /* --- Интерфейс --- */
         .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
@@ -83,7 +73,7 @@
         .selector-grid { display: flex; flex-direction: column; gap: 10px; }
         .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; }
         .selector-card.active { border-color: var(--main); background: var(--main-soft); }
-        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
+        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; object-fit: cover; }
         .price-tag { font-size: 10px; color: var(--main); font-weight: 900; }
 
         .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.7s ease-out forwards; z-index: 100; }
@@ -113,7 +103,7 @@
             <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">Клик +1</button>
             <button class="upgrade-btn auto" id="auto-upgrade-btn" onclick="buyAutoUpgrade()">Авто-клик +1</button>
             
-            <div class="panel-header" style="margin-top: 15px;">Настройки звука</div>
+            <div class="panel-header" style="margin-top: 15px;">Настройки</div>
             <div class="volume-control">
                 <span id="vol-val" style="font-size: 10px; color: #ccc;">Громкость: 50%</span>
                 <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)">
@@ -139,16 +129,19 @@
         let currentSound = localStorage.getItem('b_sound') || 'звук нажатия.mp3';
         let unlockedSkins = JSON.parse(localStorage.getItem('b_unlocked')) || ['skin0'];
 
-        // Анти-чит переменные
         let lastClickTime = 0;
         let clickHistory = []; 
         let isFrozen = false;
 
+        // Полный список скинов из ваших файлов
         const skinsDB = [
             { id: 'skin0', name: 'Банан', file: 'банан.png', price: 0 },
             { id: 'skin_pupu', name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
             { id: 'skin_burm', name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
+            { id: 'skin1', name: 'Заяц 1', file: 'заяц1.png', price: 500000 },
+            { id: 'skin2', name: 'Заяц 2', file: 'заяц2.png', price: 1000000 },
             { id: 'skin_bak', name: 'Бак', file: 'бак.png', price: 1000000 },
+            { id: 'skin3', name: 'Ишак', file: 'ишак.png', price: 10000000 },
             { id: 'skin_svin', name: 'Свинобан', file: 'свинобан.png', price: 20000000 }
         ];
 
@@ -169,7 +162,13 @@
 
         function closeAlert() { document.getElementById('custom-alert').classList.remove('show'); }
 
-        setInterval(() => { if (autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
+        // ЛОГИКА АВТОФАРМА (Только когда вкладка активна)
+        setInterval(() => { 
+            if (autoPower > 0 && document.visibilityState === 'visible') { 
+                clicks += autoPower; 
+                updateUI(); 
+            } 
+        }, 1000);
 
         function updateUI() {
             document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
@@ -226,30 +225,17 @@
 
         document.getElementById('main-image').onmousedown = (e) => {
             if (isFrozen) return;
-
             const now = Date.now();
             const interval = now - lastClickTime;
             
-            // --- СИСТЕМА ОПРЕДЕЛЕНИЯ АВТОКЛИКЕРА ---
             clickHistory.push(interval);
             if (clickHistory.length > 10) clickHistory.shift();
 
             if (clickHistory.length === 10) {
-                // Вычисляем вариативность (стандартное отклонение)
                 const avg = clickHistory.reduce((a, b) => a + b) / 10;
                 const variance = clickHistory.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / 10;
-
-                // Если вариативность почти нулевая (клики идеально ровные), это бот
-                if (variance < 2 && avg < 100) { 
-                    activateAntiCheat("Обнаружен скрипт (идеальный ритм)!");
-                    return;
-                }
-                
-                // Если кликов слишком много в секунду
-                if (avg < 50) { 
-                    activateAntiCheat("Превышен лимит CPS!");
-                    return;
-                }
+                if (variance < 2 && avg < 100) { activateAntiCheat("Обнаружен скрипт!"); return; }
+                if (avg < 50) { activateAntiCheat("Превышен лимит CPS!"); return; }
             }
 
             lastClickTime = now;
