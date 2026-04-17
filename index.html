@@ -1,197 +1,68 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Final Edition</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg: #0a0a0a; --main: #ffcc00; --main-soft: rgba(255, 204, 0, 0.1);
-            --panel: rgba(20, 20, 20, 0.9); --border: rgba(50, 50, 50, 0.5);
-            --text-dark: #888; --success: #2ecc71; --blue: #3498db;
-        }
+<script>
+    const i18n = {
+        ru: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1", alert: "Автокликер обнаружен!" },
+        ua: { click: "Клік", auto: "Авто", up: "Клік +1", autoUp: "Авто +1", alert: "Автоклікер виявлено!" },
+        en: { click: "Click", auto: "Auto", up: "Click +1", autoUp: "Auto +1", alert: "Autoclicker detected!" },
+        bg: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1", alert: "Открит автокликер!" }
+    };
 
-        body {
-            background-color: var(--bg); color: white; font-family: 'Montserrat', sans-serif;
-            display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none;
-        }
+    let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
+    let power = parseInt(localStorage.getItem('b_power')) || 1;
+    let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
+    let volume = 0.5;
+    let currentSound = 'звук нажатия.mp3';
+    let currentSkin = 'банан.png';
+    let lang = 'ru';
+    let isBlocked = false;
 
-        /* --- Переводчик --- */
-        #translator-page {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; padding-top: 50px;
-        }
-        .trans-container { width: 90%; max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .trans-box { background: #111; border: 1px solid #333; border-radius: 12px; padding: 20px; height: 220px; position: relative; }
-        textarea { width: 100%; background: transparent; border: none; color: white; font-family: inherit; resize: none; font-size: 18px; outline: none; height: 140px; }
-        .listen-btn { position: absolute; bottom: 15px; right: 15px; background: none; border: none; cursor: pointer; font-size: 30px; }
+    // --- Система защиты ---
+    let clickTimes = [];
+    let lastTime = 0;
 
-        /* --- Блокировка --- */
-        #custom-alert {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
-            background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border);
-            padding: 30px; border-radius: 24px; z-index: 3000; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s;
-        }
-        #custom-alert.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
+    function playBulgarianVoice() {
+        const input = document.getElementById('source-text').value;
+        if(!input) return;
+        const v = new Audio('болгарский язык.mp3');
+        v.volume = volume;
+        v.playbackRate = 1.2;
+        v.play();
+    }
 
-        /* --- Интерфейс --- */
-        .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
-        .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
-        #main-image { width: 350px; height: 350px; object-fit: contain; cursor: pointer; transition: 0.1s; }
-        #main-image.frozen { filter: grayscale(1) brightness(0.2); cursor: not-allowed; }
+    function setLang(l) {
+        lang = l;
+        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + l).classList.add('active');
+        updateUI();
+    }
 
-        .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
-        .panel { width: 260px; background: var(--panel); backdrop-filter: blur(15px); border-radius: 24px; border: 1px solid var(--border); padding: 20px; pointer-events: auto; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .panel-header { font-size: 10px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 1px; }
+    function setSound(s, id) {
+        currentSound = s;
+        document.getElementById('snd1').classList.remove('active');
+        document.getElementById('snd2').classList.remove('active');
+        document.getElementById(id).classList.add('active');
+    }
 
-        .upgrade-btn { width: 100%; padding: 12px; background: var(--success); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; font-size: 11px; transition: 0.2s; }
-        .upgrade-btn:disabled { background: #333; opacity: 0.5; }
-        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: 700; }
-        .lang-btn.active { background: var(--main); color: black; border-color: var(--main); }
+    function changeVolume(v) { volume = v; }
 
-        .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.6s forwards; z-index: 100; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
-    </style>
-</head>
-<body>
+    function updateUI() {
+        const t = i18n[lang];
+        document.getElementById('counter').innerText = clicks.toLocaleString();
+        document.getElementById('power-display').innerText = `${t.click}: +${power}`;
+        document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/с`;
+        
+        document.getElementById('up-btn').innerText = `${t.up} (${power * 1000})`;
+        document.getElementById('auto-up-btn').innerText = `${t.autoUp} (${(autoPower + 1) * 10000})`;
 
-    <div id="custom-alert">
-        <h2 style="margin:0; color: #ff4444;">Обнаружен кликер!</h2>
-        <p>Слишком ровный ритм. Бан на 5 секунд.</p>
-    </div>
+        localStorage.setItem('b_clicks', clicks);
+        localStorage.setItem('b_power', power);
+        localStorage.setItem('b_auto_power', autoPower);
 
-    <div id="translator-page">
-        <h1 style="color: white; margin-bottom: 30px;">Google Переводчик</h1>
-        <div class="trans-container">
-            <div class="trans-box"><textarea id="source-text" placeholder="Введите текст..."></textarea></div>
-            <div class="trans-box"><div style="height: 140px; display: flex; align-items: center; justify-content: center; color: #444;">[Аудио-перевод]</div><button class="listen-btn" onclick="playBulgarianVoice()">🔊</button></div>
-        </div>
-        <button class="upgrade-btn" style="margin-top:20px; width: auto; padding: 10px 30px;" onclick="toggleTranslator(false)">Вернуться к игре</button>
-    </div>
-
-    <div class="main-stage">
-        <div class="stats-count" id="counter">0</div>
-        <div style="display:flex; gap:15px; font-weight: 700; margin-top:5px; color: var(--text-dark);">
-            <span id="power-display">Клик: +1</span>
-            <span id="auto-display" style="color: var(--blue);">Авто: +0/с</span>
-        </div>
-        <img src="банан.png" id="main-image">
-    </div>
-
-    <div class="side-panels-container">
-        <div class="panel">
-            <div class="panel-header">Языки / Languages</div>
-            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                <button class="lang-btn active" id="btn-ru" onclick="setLang('ru')">RU</button>
-                <button class="lang-btn" id="btn-ua" onclick="setLang('ua')">UA</button>
-                <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
-                <button class="lang-btn" id="btn-bg" onclick="setLang('bg')">BG</button>
-                <button class="lang-btn" style="background:var(--blue); border:none;" onclick="toggleTranslator(true)">🌐</button>
-            </div>
-            
-            <div class="panel-header" style="margin-top:10px;">Прокачка</div>
-            <button class="upgrade-btn" id="up-btn" onclick="buyUpgrade()">Клик +1</button>
-            <button class="upgrade-btn" id="auto-up-btn" style="background:var(--blue)" onclick="buyAutoUpgrade()">Авто +1</button>
-
-            <div class="panel-header" style="margin-top:10px;">Звук клика</div>
-            <div style="display:flex; gap:5px;">
-                <button class="lang-btn active" id="snd1" style="flex:1" onclick="setSound('звук нажатия.mp3', 'snd1')">№1</button>
-                <button class="lang-btn" id="snd2" style="flex:1" onclick="setSound('звук нажатия2.mp3', 'snd2')">№2</button>
-            </div>
-            
-            <div class="panel-header" style="margin-top:10px;">Громкость</div>
-            <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)" style="width:100%; accent-color:var(--main);">
-        </div>
-
-        <div class="panel" id="skin-list">
-            <div class="panel-header">Скины</div>
-        </div>
-    </div>
-
-    <script>
-        const i18n = {
-            ru: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1" },
-            ua: { click: "Клік", auto: "Авто", up: "Клік +1", autoUp: "Авто +1" },
-            en: { click: "Click", auto: "Auto", up: "Click +1", autoUp: "Auto +1" },
-            bg: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1" }
-        };
-
-        let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
-        let power = parseInt(localStorage.getItem('b_power')) || 1;
-        let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
-        let volume = 0.5;
-        let currentSound = 'звук нажатия.mp3';
-        let currentSkin = 'банан.png';
-        let lang = 'ru';
-        let isBlocked = false;
-
-        let lastClickTime = 0;
-        let clickHistory = [];
-        let bgMusic = new Audio('болгарский язык.mp3'); bgMusic.loop = true;
-
-        const skinsDB = [
-            { name: 'Банан', file: 'банан.png', price: 0 },
-            { name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
-            { name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
-            { name: 'Заяц 1', file: 'заяц1.png', price: 50000 },
-            { name: 'Заяц 2', file: 'заяц2.png', price: 150000 },
-            { name: 'Бак', file: 'бак.png', price: 300000 },
-            { name: 'Ишак', file: 'ишак.png', price: 1000000 },
-            { name: 'Свинобан', file: 'свинобан.png', price: 5000000 }
-        ];
-
-        function playBulgarianVoice() {
-            const input = document.getElementById('source-text').value;
-            if(!input) return;
-            const v = new Audio('болгарский язык.mp3');
-            v.volume = volume;
-            v.playbackRate = input.length > 15 ? 0.7 : 1.3;
-            v.play();
-        }
-
-        function setLang(l) {
-            lang = l;
-            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('btn-' + l).classList.add('active');
-            if (l === 'bg') { bgMusic.volume = volume; bgMusic.play(); } 
-            else { bgMusic.pause(); }
-            updateUI();
-        }
-
-        function setSound(s, id) {
-            currentSound = s;
-            document.getElementById('snd1').classList.remove('active');
-            document.getElementById('snd2').classList.remove('active');
-            document.getElementById(id).classList.add('active');
-        }
-
-        function changeVolume(v) { volume = v; bgMusic.volume = v; }
-
-        function updateUI() {
-            const t = i18n[lang];
-            document.getElementById('counter').innerText = clicks.toLocaleString();
-            document.getElementById('power-display').innerText = `${t.click}: +${power}`;
-            document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/с`;
-            
-            let upCost = power * 1000;
-            let autoCost = (autoPower + 1) * 10000;
-            document.getElementById('up-btn').innerText = `${t.up} (${upCost})`;
-            document.getElementById('up-btn').disabled = clicks < upCost;
-            document.getElementById('auto-up-btn').innerText = `${t.autoUp} (${autoCost})`;
-            document.getElementById('auto-up-btn').disabled = clicks < autoCost;
-
-            localStorage.setItem('b_clicks', clicks);
-            localStorage.setItem('b_power', power);
-            localStorage.setItem('b_auto_power', autoPower);
-
-            const list = document.getElementById('skin-list');
-            list.innerHTML = '<div class="panel-header">Скины</div>';
+        // Рендер скинов (кратко)
+        const list = document.getElementById('skin-list');
+        if (list.children.length <= 1) { // Чтобы не перерисовывать постоянно
             skinsDB.forEach(skin => {
                 const card = document.createElement('div');
-                card.className = `selector-card ${currentSkin === skin.file ? 'active' : ''}`;
-                card.style = "padding:8px; background:rgba(40,40,40,0.5); border-radius:12px; border:2px solid transparent; cursor:pointer; display:flex; align-items:center; gap:10px; margin-bottom:5px;";
-                if(currentSkin === skin.file) card.style.borderColor = "var(--main)";
+                card.className = "selector-card";
                 card.onclick = () => {
                     if (clicks >= skin.price || currentSkin === skin.file) {
                         if (currentSkin !== skin.file) clicks -= skin.price;
@@ -200,60 +71,92 @@
                         updateUI();
                     }
                 };
-                card.innerHTML = `<img src="${skin.file}" style="width:35px; height:35px; border-radius:6px;"><div><div style="font-size:11px; font-weight:700;">${skin.name}</div><div style="font-size:9px; color:var(--main);">${skin.price.toLocaleString()}</div></div>`;
+                card.innerHTML = `<img src="${skin.file}" style="width:30px"> <span>${skin.name}</span>`;
                 list.appendChild(card);
             });
         }
+    }
 
-        document.getElementById('main-image').onmousedown = (e) => {
-            if (isBlocked || !e.isTrusted) return;
+    // ГЛАВНАЯ ЛОГИКА ПРОВЕРКИ
+    document.getElementById('main-image').addEventListener('mousedown', function(e) {
+        if (isBlocked) return;
 
-            const now = Date.now();
-            const interval = now - lastClickTime;
-            lastClickTime = now;
+        // 1. Проверка на эмуляцию
+        if (!e.isTrusted) { activateBlock(); return; }
 
-            clickHistory.push({ time: now, gap: interval });
-            clickHistory = clickHistory.filter(c => now - c.time < 1000); // Окно в 1 секунду
+        const now = performance.now();
+        const gap = now - lastTime;
+        lastTime = now;
 
-            if (clickHistory.length > 15) {
-                const gaps = clickHistory.map(c => c.gap).filter(g => g > 0);
-                const avg = gaps.reduce((a, b) => a + b, 0) / gaps.length;
-                const variance = gaps.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / gaps.length;
-                if (variance < 2.0) { activateBlock(); return; }
+        clickTimes.push(gap);
+        if (clickTimes.length > 20) clickTimes.shift();
+
+        // 2. Анализ ритма (если последние 10 кликов слишком одинаковые)
+        if (clickTimes.length >= 10) {
+            const last10 = clickTimes.slice(-10);
+            const diffs = [];
+            for(let i=1; i<last10.length; i++) {
+                diffs.push(Math.abs(last10[i] - last10[i-1]));
             }
-
-            clicks += power;
-            let a = new Audio(currentSound); a.volume = volume; a.play();
-
-            const p = document.createElement('div');
-            p.innerText = `+${power}`; p.className = 'plus-one';
-            p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
-            document.body.appendChild(p);
-            setTimeout(() => p.remove(), 600);
-
-            e.target.style.transform = 'scale(0.85)';
-            setTimeout(() => e.target.style.transform = 'scale(1)', 50);
-            updateUI();
-        };
-
-        function activateBlock() {
-            isBlocked = true;
-            document.getElementById('main-image').classList.add('frozen');
-            document.getElementById('custom-alert').classList.add('show');
-            setTimeout(() => {
-                isBlocked = false;
-                document.getElementById('main-image').classList.remove('frozen');
-                document.getElementById('custom-alert').classList.remove('show');
-                clickHistory = [];
-            }, 5000);
+            // Если среднее отклонение меньше 3мс - это бот
+            const avgDiff = diffs.reduce((a,b) => a+b) / diffs.length;
+            if (avgDiff < 3) { activateBlock(); return; }
         }
 
-        function toggleTranslator(s) { document.getElementById('translator-page').style.display = s ? 'flex' : 'none'; }
-        function buyUpgrade() { let c = power * 1000; if(clicks >= c){ clicks -= c; power++; updateUI(); } }
-        function buyAutoUpgrade() { let c = (autoPower + 1) * 10000; if(clicks >= c){ clicks -= c; autoPower++; updateUI(); } }
+        // 3. Анализ скорости (больше 25 кликов в сек)
+        const clicksLastSec = clickTimes.filter(t => t < 1000).length;
+        if (clickHistoryCount() > 25) { activateBlock(); return; }
 
-        setInterval(() => { if(!isBlocked && autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
+        // Клик разрешен
+        clicks += power;
+        let s = new Audio(currentSound); s.volume = volume; s.play();
+        
+        // Эффект +1
+        const p = document.createElement('div');
+        p.innerText = `+${power}`; p.className = 'plus-one';
+        p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 600);
         updateUI();
-    </script>
-</body>
-</html>
+    });
+
+    function clickHistoryCount() {
+        const now = performance.now();
+        // Мы считаем количество вызовов mousedown за последнюю секунду
+        if (!window.recentClicks) window.recentClicks = [];
+        window.recentClicks.push(now);
+        window.recentClicks = window.recentClicks.filter(t => now - t < 1000);
+        return window.recentClicks.length;
+    }
+
+    function activateBlock() {
+        isBlocked = true;
+        const img = document.getElementById('main-image');
+        img.style.filter = "grayscale(1) contrast(3) brightness(0.2)";
+        document.getElementById('custom-alert').classList.add('show');
+        
+        setTimeout(() => {
+            isBlocked = false;
+            img.style.filter = "";
+            document.getElementById('custom-alert').classList.remove('show');
+            clickTimes = [];
+            window.recentClicks = [];
+        }, 5000);
+    }
+
+    function toggleTranslator(s) { document.getElementById('translator-page').style.display = s ? 'flex' : 'none'; }
+    function buyUpgrade() { let c = power * 1000; if(clicks >= c){ clicks -= c; power++; updateUI(); } }
+    function buyAutoUpgrade() { let c = (autoPower + 1) * 10000; if(clicks >= c){ clicks -= c; autoPower++; updateUI(); } }
+
+    setInterval(() => { if(!isBlocked && autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
+    
+    // Начальная загрузка скинов
+    const skinsDB = [
+        { name: 'Банан', file: 'банан.png', price: 0 },
+        { name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
+        { name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
+        { name: 'Ишак', file: 'ишак.png', price: 1000000 }
+    ];
+
+    updateUI();
+</script>
