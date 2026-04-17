@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Anti-Cheat Pro</title>
+    <title>Banana Evolution: Unlocked</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -12,68 +12,91 @@
         }
         body { background-color: var(--bg); color: white; font-family: 'Montserrat', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none; }
         
-        #custom-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--panel); backdrop-filter: blur(20px); border: 2px solid #ff4444; padding: 30px; border-radius: 24px; z-index: 3000; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; }
-        #custom-alert.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
-
         .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
-        .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); line-height: 1; }
-        #main-image { width: 350px; height: 350px; object-fit: contain; cursor: pointer; transition: 0.1s; }
-        #main-image.frozen { filter: grayscale(1) brightness(0.1) contrast(5); }
+        .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); line-height: 1; text-shadow: 0 0 30px rgba(255,204,0,0.3); }
+        #main-image { width: 350px; height: 350px; object-fit: contain; cursor: pointer; transition: 0.1s; transform-origin: center; }
+        #main-image:active { transform: scale(0.9); }
 
         .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
         .panel { width: 260px; background: var(--panel); backdrop-filter: blur(15px); border-radius: 24px; border: 1px solid var(--border); padding: 20px; pointer-events: auto; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .upgrade-btn { width: 100%; padding: 12px; background: #2ecc71; border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; font-size: 11px; }
-        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; }
-        .lang-btn.active { background: var(--main); color: black; }
+        
+        .panel-header { font-size: 10px; font-weight: 900; color: var(--text-dark); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; }
+        .upgrade-btn { width: 100%; padding: 12px; background: #2ecc71; border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; font-size: 11px; transition: 0.2s; }
+        .upgrade-btn:hover { filter: brightness(1.1); }
+        .upgrade-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.5; }
+
+        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: 700; }
+        .lang-btn.active { background: var(--main); color: black; border-color: var(--main); }
+
         .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.6s forwards; z-index: 100; }
-        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+        @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-130px) scale(1.2); opacity: 0; } }
     </style>
 </head>
 <body>
 
-    <div id="custom-alert">
-        <h2 style="margin:0; color: #ff4444;">ЧИТЫ ОБНАРУЖЕНЫ!</h2>
-        <p>Автокликер заблокирован. <br> <b id="fine-text" style="color:var(--main)">Клики за сессию аннулированы.</b></p>
-    </div>
-
     <div class="main-stage">
         <div class="stats-count" id="counter">0</div>
-        <div style="display:flex; gap:15px; font-weight: 700; color: var(--text-dark);">
-            <span id="power-display">Клик: +1</span>
-            <span id="auto-display" style="color: var(--blue);">Авто: +0/с</span>
+        <div style="display:flex; gap:15px; font-weight: 700; color: var(--text-dark); margin-top: 10px;">
+            <span id="txt-click-stat">Клик: +1</span>
+            <span id="txt-auto-stat" style="color: var(--blue);">Авто: +0/с</span>
         </div>
         <img src="банан.png" id="main-image">
     </div>
 
     <div class="side-panels-container">
         <div class="panel">
+            <div class="panel-header" id="hdr-lang">Язык / Language</div>
             <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                <button class="lang-btn active" onclick="setLang('ru')">RU</button>
-                <button class="lang-btn" onclick="setLang('ua')">UA</button>
-                <button class="lang-btn" onclick="setLang('bg')">BG</button>
+                <button class="lang-btn active" id="l-ru" onclick="setLang('ru')">RU</button>
+                <button class="lang-btn" id="l-ua" onclick="setLang('ua')">UA</button>
+                <button class="lang-btn" id="l-en" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" id="l-bg" onclick="setLang('bg')">BG</button>
             </div>
+            
+            <div class="panel-header" id="hdr-upgrades" style="margin-top:15px;">Улучшения</div>
             <button class="upgrade-btn" id="up-btn" onclick="buyUpgrade()">Клик +1</button>
             <button class="upgrade-btn" style="background:var(--blue)" id="auto-up-btn" onclick="buyAutoUpgrade()">Авто +1</button>
-            <div style="font-size:10px; color:var(--text-dark); margin-top:10px;">ГРОМКОСТЬ</div>
-            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)" style="width:100%;">
+            
+            <div class="panel-header" style="margin-top:15px;" id="hdr-volume">Громкость</div>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)" style="width:100%; accent-color: var(--main);">
         </div>
+
         <div class="panel" id="skin-list">
-            <div style="font-size:10px; color:var(--text-dark); text-transform:uppercase;">ВАШИ СКИНЫ</div>
+            <div class="panel-header" id="hdr-skins">Скины</div>
         </div>
     </div>
 
     <script>
+        const langData = {
+            ru: {
+                clickStat: "Клик: +", autoStat: "Авто: +", hLang: "Язык",
+                hUp: "Улучшения", hSkins: "Скины", hVol: "Громкость",
+                btnUp: "Клик +1", btnAuto: "Авто +1", perSec: "/с"
+            },
+            ua: {
+                clickStat: "Клік: +", autoStat: "Авто: +", hLang: "Мова",
+                hUp: "Покращення", hSkins: "Скіни", hVol: "Гучність",
+                btnUp: "Клік +1", btnAuto: "Авто +1", perSec: "/с"
+            },
+            en: {
+                clickStat: "Click: +", autoStat: "Auto: +", hLang: "Language",
+                hUp: "Upgrades", hSkins: "Skins", hVol: "Volume",
+                btnUp: "Click +1", btnAuto: "Auto +1", perSec: "/s"
+            },
+            bg: {
+                clickStat: "Клик: +", autoStat: "Авто: +", hLang: "Език",
+                hUp: "Подобрения", hSkins: "Скинове", hVol: "Сила на звука",
+                btnUp: "Клик +1", btnAuto: "Авто +1", perSec: "/с"
+            }
+        };
+
         let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
         let power = parseInt(localStorage.getItem('b_power')) || 1;
         let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
-        let sessionEarned = 0; // Клики за текущий заход
+        let currentLang = 'ru';
         let volume = 0.5;
         let currentSkin = 'банан.png';
-        let isBlocked = false;
-
-        // Система защиты (2 секунды анализа)
-        let clickData = []; 
-        let lastTime = performance.now();
+        
         let bgMusic = new Audio('болгарский язык.mp3'); bgMusic.loop = true;
 
         const skinsDB = [
@@ -88,22 +111,44 @@
         ];
 
         function setLang(l) {
-            if (l === 'bg') bgMusic.play(); else bgMusic.pause();
+            currentLang = l;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('l-' + l).classList.add('active');
+            
+            if (l === 'bg') { bgMusic.volume = volume; bgMusic.play(); } else { bgMusic.pause(); }
+            updateUI();
         }
 
         function updateUI() {
+            const d = langData[currentLang];
+            
+            // Тексты статистики
             document.getElementById('counter').innerText = Math.floor(clicks).toLocaleString();
-            document.getElementById('power-display').innerText = `Клик: +${power}`;
-            document.getElementById('auto-display').innerText = `Авто: +${autoPower}/с`;
-            document.getElementById('up-btn').innerText = `Клик +1 (${power * 1000})`;
-            document.getElementById('auto-up-btn').innerText = `Авто +1 (${(autoPower+1)*10000})`;
+            document.getElementById('txt-click-stat').innerText = `${d.clickStat}${power}`;
+            document.getElementById('txt-auto-stat').innerText = `${d.autoStat}${autoPower}${d.perSec}`;
+            
+            // Заголовки панелей
+            document.getElementById('hdr-lang').innerText = d.hLang;
+            document.getElementById('hdr-upgrades').innerText = d.hUp;
+            document.getElementById('hdr-skins').innerText = d.hSkins;
+            document.getElementById('hdr-volume').innerText = d.hVol;
+
+            // Кнопки улучшений
+            let upCost = power * 1000;
+            let autoCost = (autoPower + 1) * 10000;
+            document.getElementById('up-btn').innerText = `${d.btnUp} (${upCost})`;
+            document.getElementById('auto-up-btn').innerText = `${d.btnAuto} (${autoCost})`;
+            
+            document.getElementById('up-btn').disabled = clicks < upCost;
+            document.getElementById('auto-up-btn').disabled = clicks < autoCost;
 
             localStorage.setItem('b_clicks', clicks);
             localStorage.setItem('b_power', power);
             localStorage.setItem('b_auto_power', autoPower);
 
+            // Рендер скинов
             const list = document.getElementById('skin-list');
-            list.innerHTML = '<div style="font-size:10px; color:var(--text-dark);">ВАШИ СКИНЫ</div>';
+            list.innerHTML = `<div class="panel-header">${d.hSkins}</div>`;
             skinsDB.forEach(skin => {
                 const card = document.createElement('div');
                 card.style = `padding:8px; background:rgba(40,40,40,0.5); border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:10px; margin-top:5px; border: 2px solid ${currentSkin === skin.file ? 'var(--main)' : 'transparent'}`;
@@ -115,39 +160,19 @@
                         updateUI();
                     }
                 };
-                card.innerHTML = `<img src="${skin.file}" style="width:30px; height:30px;"> <div><div style="font-size:11px;">${skin.name}</div><div style="font-size:9px; color:var(--main)">${skin.price}</div></div>`;
+                card.innerHTML = `<img src="${skin.file}" style="width:30px; height:30px; object-fit:contain;"> 
+                                 <div><div style="font-size:11px; font-weight:700;">${skin.name}</div>
+                                 <div style="font-size:9px; color:var(--main)">${skin.price.toLocaleString()}</div></div>`;
                 list.appendChild(card);
             });
         }
 
         document.getElementById('main-image').onmousedown = function(e) {
-            if (isBlocked || !e.isTrusted) return;
-
-            const now = performance.now();
-            const gap = now - lastTime;
-            lastTime = now;
-
-            // Собираем данные за 2 секунды
-            clickData.push({ gap: gap, time: now });
-            clickData = clickData.filter(d => now - d.time < 2000);
-
-            if (clickData.length >= 15) {
-                const gaps = clickData.map(d => d.gap).filter(g => g > 0);
-                const avg = gaps.reduce((a, b) => a + b) / gaps.length;
-                // Проверка на вариативность (человек кликает "криво", бот - "ровно")
-                const variance = gaps.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / gaps.length;
-
-                // Если за 2 секунды ритм слишком идеальный (variance < 2.5) или скорость > 25 кпс
-                if (variance < 2.5 || (clickData.length / 2) > 25) {
-                    activateBlock();
-                    return;
-                }
-            }
-
-            // Успешный клик
             clicks += power;
-            sessionEarned += power;
-            let s = new Audio('звук нажатия.mp3'); s.volume = volume; s.play();
+            
+            let s = new Audio('звук нажатия.mp3'); 
+            s.volume = volume; 
+            s.play();
             
             const p = document.createElement('div');
             p.innerText = `+${power}`; p.className = 'plus-one';
@@ -157,33 +182,13 @@
             updateUI();
         };
 
-        function activateBlock() {
-            isBlocked = true;
-            // ШТРАФ: Забираем все клики, заработанные за сессию
-            clicks -= sessionEarned;
-            if (clicks < 0) clicks = 0;
-            sessionEarned = 0;
-
-            document.getElementById('main-image').classList.add('frozen');
-            document.getElementById('custom-alert').classList.add('show');
-            
-            setTimeout(() => {
-                isBlocked = false;
-                document.getElementById('main-image').classList.remove('frozen');
-                document.getElementById('custom-alert').classList.remove('show');
-                clickData = [];
-            }, 5000);
-            updateUI();
-        }
-
         function buyUpgrade() { let c = power * 1000; if(clicks >= c){ clicks -= c; power++; updateUI(); } }
         function buyAutoUpgrade() { let c = (autoPower + 1) * 10000; if(clicks >= c){ clicks -= c; autoPower++; updateUI(); } }
         function changeVolume(v) { volume = v; bgMusic.volume = v; }
 
         setInterval(() => { 
-            if(!isBlocked && autoPower > 0) { 
+            if(autoPower > 0) { 
                 clicks += autoPower; 
-                sessionEarned += autoPower;
                 updateUI(); 
             } 
         }, 1000);
