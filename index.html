@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Premium</title>
-    <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
+    <title>Banana Evolution: Shop Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -14,6 +13,7 @@
             --panel: rgba(20, 20, 20, 0.9);
             --border: rgba(50, 50, 50, 0.5);
             --text-dark: #888;
+            --danger: #ff4757;
         }
 
         body {
@@ -29,11 +29,52 @@
             user-select: none;
         }
 
+        /* --- Стили для модального окна (Уведомления) --- */
+        #custom-alert {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            background: var(--panel);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--border);
+            padding: 30px;
+            border-radius: 24px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            opacity: 0;
+            pointer-events: none;
+            transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+        }
+
+        #custom-alert.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        #custom-alert h2 { margin: 0 0 10px; font-size: 18px; color: var(--danger); }
+        #custom-alert p { margin: 0 0 20px; color: #ccc; font-size: 14px; }
+        
+        .alert-btn {
+            background: var(--main);
+            color: black;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .alert-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--main-soft); }
+
+        /* --- Основной интерфейс --- */
         .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
         .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
         .stats-power { font-size: 1.1rem; color: var(--text-dark); margin-top: 5px; display: flex; gap: 20px; }
         
-        #main-image { width: 450px; height: 450px; object-fit: contain; cursor: pointer; transition: 0.1s; }
+        #main-image { width: 400px; height: 400px; object-fit: contain; cursor: pointer; transition: 0.1s; }
 
         .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
         .panel { width: 280px; background: var(--panel); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid var(--border); padding: 25px; pointer-events: auto; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
@@ -45,18 +86,27 @@
         .upgrade-btn:disabled { background: #333; opacity: 0.5; cursor: not-allowed; }
 
         .selector-grid { display: flex; flex-direction: column; gap: 10px; }
-        .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; }
+        .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; transition: 0.3s; position: relative; }
         .selector-card.active { border-color: var(--main); background: var(--main-soft); }
         .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
         .selector-card span { font-size: 10px; color: #ccc; font-weight: 700; display: block; }
-        .selector-card .progress-text { font-size: 9px; color: var(--main); margin-top: 4px; font-weight: 700; }
-        .locked { opacity: 0.3; cursor: not-allowed; }
+        
+        .price-tag { font-size: 10px; color: var(--main); font-weight: 900; margin-top: 5px; }
+        .status-tag { font-size: 9px; color: #2ecc71; font-weight: 700; margin-top: 5px; }
+        
+        .locked-overlay { filter: grayscale(1) brightness(0.5); }
 
         .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.7s ease-out forwards; z-index: 100; }
         @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-150px); opacity: 0; } }
     </style>
 </head>
 <body>
+
+    <div id="custom-alert">
+        <h2 id="alert-title">Внимание</h2>
+        <p id="alert-msg">Текст сообщения</p>
+        <button class="alert-btn" onclick="closeAlert()">Понятно</button>
+    </div>
 
     <div class="main-stage">
         <div class="stats-count" id="counter">0</div>
@@ -69,8 +119,8 @@
 
     <div class="side-panels-container">
         <div class="panel">
-            <div class="panel-header">Прокачка</div>
-            <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">Улучшить клик</button>
+            <div class="panel-header">Улучшения</div>
+            <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">Клик +1</button>
             <button class="upgrade-btn auto" id="auto-upgrade-btn" onclick="buyAutoUpgrade()">Авто-клик +1</button>
             
             <div class="panel-header" style="margin-top: auto;">Звук</div>
@@ -81,40 +131,8 @@
         </div>
 
         <div class="panel" style="width: 250px;">
-            <div class="panel-header">Скины</div>
-            <div class="selector-grid">
-                <div class="selector-card active" id="skin0" onclick="changeSkin('банан.png', 0, 'skin0')">
-                    <img src="банан.png"><span>Банан</span>
-                </div>
-                <div class="selector-card locked" id="skin_pupu" onclick="changeSkin('пу-пу-пу.png', 1000, 'skin_pupu')">
-                    <img src="пу-пу-пу.png"><span>Пу-пу-пу</span>
-                    <div class="progress-text" id="prog_pupu"></div>
-                </div>
-                <div class="selector-card locked" id="skin_burm" onclick="changeSkin('банан-бурмолдан.png', 5000, 'skin_burm')">
-                    <img src="банан-бурмолдан.png"><span>Бурмолдан</span>
-                    <div class="progress-text" id="prog_burm"></div>
-                </div>
-                <div class="selector-card locked" id="skin1" onclick="changeSkin('заяц1.png', 500000, 'skin1')">
-                    <img src="заяц1.png"><span>Заяц 1</span>
-                    <div class="progress-text" id="prog-skin1"></div>
-                </div>
-                <div class="selector-card locked" id="skin2" onclick="changeSkin('заяц2.png', 1000000, 'skin2')">
-                    <img src="заяц2.png"><span>Заяц 2</span>
-                    <div class="progress-text" id="prog-skin2"></div>
-                </div>
-                <div class="selector-card locked" id="skin_bak" onclick="changeSkin('бак.png', 1000000, 'skin_bak')">
-                    <img src="бак.png"><span>Бак</span>
-                    <div class="progress-text" id="prog_bak"></div>
-                </div>
-                <div class="selector-card locked" id="skin3" onclick="changeSkin('ишак.png', 10000000, 'skin3')">
-                    <img src="ишак.png"><span>Ишак</span>
-                    <div class="progress-text" id="prog-skin3"></div>
-                </div>
-                <div class="selector-card locked" id="skin_svin" onclick="changeSkin('свинобан.png', 20000000, 'skin_svin')">
-                    <img src="свинобан.png"><span>Свинобан</span>
-                    <div class="progress-text" id="prog_svin"></div>
-                </div>
-            </div>
+            <div class="panel-header">Магазин скинов</div>
+            <div class="selector-grid" id="skin-list"></div>
         </div>
     </div>
 
@@ -124,12 +142,32 @@
         let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
         let currentSkin = localStorage.getItem('b_skin') || 'банан.png';
         let currentSound = localStorage.getItem('b_sound') || 'звук нажатия.mp3';
-        
-        // Список навсегда разблокированных скинов
         let unlockedSkins = JSON.parse(localStorage.getItem('b_unlocked')) || ['skin0'];
+
+        const skinsDB = [
+            { id: 'skin0', name: 'Обычный Банан', file: 'банан.png', price: 0 },
+            { id: 'skin_pupu', name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
+            { id: 'skin_burm', name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
+            { id: 'skin1', name: 'Заяц 1', file: 'заяц1.png', price: 500000 },
+            { id: 'skin2', name: 'Заяц 2', file: 'заяц2.png', price: 1000000 },
+            { id: 'skin_bak', name: 'Бак', file: 'бак.png', price: 1000000 },
+            { id: 'skin3', name: 'Ишак', file: 'ишак.png', price: 10000000 },
+            { id: 'skin_svin', name: 'Свинобан', file: 'свинобан.png', price: 20000000 }
+        ];
 
         const mainImage = document.getElementById('main-image');
         mainImage.src = currentSkin;
+
+        // Функции модального окна
+        function showAlert(title, msg) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-msg').innerText = msg;
+            document.getElementById('custom-alert').classList.add('show');
+        }
+
+        function closeAlert() {
+            document.getElementById('custom-alert').classList.remove('show');
+        }
 
         setInterval(() => {
             if (autoPower > 0) {
@@ -138,67 +176,68 @@
             }
         }, 1000);
 
+        function renderSkins() {
+            const container = document.getElementById('skin-list');
+            container.innerHTML = '';
+            skinsDB.forEach(skin => {
+                const isUnlocked = unlockedSkins.includes(skin.id);
+                const isActive = currentSkin === skin.file;
+                const card = document.createElement('div');
+                card.className = `selector-card ${isActive ? 'active' : ''}`;
+                card.onclick = () => handleSkinClick(skin);
+                card.innerHTML = `
+                    <img src="${skin.file}" class="${!isUnlocked ? 'locked-overlay' : ''}">
+                    <span>${skin.name}</span>
+                    ${isUnlocked ? '<div class="status-tag">ВЫБРАТЬ</div>' : `<div class="price-tag">КУПИТЬ: ${skin.price.toLocaleString()}</div>`}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleSkinClick(skin) {
+            if (unlockedSkins.includes(skin.id)) {
+                currentSkin = skin.file;
+                mainImage.src = skin.file;
+                localStorage.setItem('b_skin', skin.file);
+            } else {
+                if (clicks >= skin.price) {
+                    clicks -= skin.price;
+                    unlockedSkins.push(skin.id);
+                    localStorage.setItem('b_unlocked', JSON.stringify(unlockedSkins));
+                    currentSkin = skin.file;
+                    mainImage.src = skin.file;
+                    localStorage.setItem('b_skin', skin.file);
+                } else {
+                    // Используем наше новое окно вместо alert
+                    showAlert('Ошибка', 'Недостаточно кликов для покупки этого скина!');
+                }
+            }
+            updateUI();
+        }
+
         function updateUI() {
             document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
             document.getElementById('power-display').innerText = `Клик: +${power}`;
             document.getElementById('auto-display').innerText = `Авто: +${autoPower}/сек`;
             
-            let upgradeCost = power * 1000;
+            let upCost = power * 1000;
             let autoCost = (autoPower + 1) * 10000;
 
-            document.getElementById('upgrade-btn').innerText = `Клик +1 (${upgradeCost.toLocaleString()})`;
-            document.getElementById('upgrade-btn').disabled = clicks < upgradeCost;
-
-            document.getElementById('auto-upgrade-btn').innerText = `Авто-клик +1 (${autoCost.toLocaleString()})`;
+            document.getElementById('upgrade-btn').innerText = `Клик +1 (${upCost.toLocaleString()})`;
+            document.getElementById('upgrade-btn').disabled = clicks < upCost;
+            document.getElementById('auto-upgrade-btn').innerText = `Авто +1 (${autoCost.toLocaleString()})`;
             document.getElementById('auto-upgrade-btn').disabled = clicks < autoCost;
-
-            // Обновляем прогресс и проверяем условия разблокировки
-            checkAndUnlock(1000, 'skin_pupu', 'prog_pupu', '1 000');
-            checkAndUnlock(5000, 'skin_burm', 'prog_burm', '5 000');
-            checkAndUnlock(500000, 'skin1', 'prog-skin1', '500 000');
-            checkAndUnlock(1000000, 'skin2', 'prog-skin2', '1 000 000');
-            checkAndUnlock(1000000, 'skin_bak', 'prog_bak', '1 000 000');
-            checkAndUnlock(10000000, 'skin3', 'prog-skin3', '10 000 000');
-            checkAndUnlock(20000000, 'skin_svin', 'prog_svin', '20 000 000');
 
             localStorage.setItem('b_clicks', clicks);
             localStorage.setItem('b_power', power);
             localStorage.setItem('b_auto_power', autoPower);
-            localStorage.setItem('b_skin', currentSkin);
-            localStorage.setItem('b_unlocked', JSON.stringify(unlockedSkins));
-        }
-
-        function checkAndUnlock(req, cardId, progId, label) {
-            const card = document.getElementById(cardId);
-            const prog = document.getElementById(progId);
-            
-            // Если скин уже был когда-то открыт
-            if (unlockedSkins.includes(cardId)) {
-                card.classList.remove('locked');
-                prog.innerText = "РАЗБЛОКИРОВАНО";
-                prog.style.color = "#2ecc71";
-                return;
-            }
-
-            // Если условие выполнено сейчас
-            if (clicks >= req) {
-                unlockedSkins.push(cardId);
-                card.classList.remove('locked');
-                prog.innerText = "РАЗБЛОКИРОВАНО";
-                prog.style.color = "#2ecc71";
-            } else {
-                card.classList.add('locked');
-                let left = req - clicks;
-                prog.innerText = `(${left.toLocaleString('ru-RU')} / ${label})`;
-                prog.style.color = "#ffcc00";
-            }
+            renderSkins();
         }
 
         document.body.onmousedown = (e) => {
             if(e.target.id !== 'main-image') return;
             clicks += power;
             new Audio(currentSound).play();
-            
             const p = document.createElement('div');
             p.innerText = `+${power}`;
             p.className = 'plus-one';
@@ -206,7 +245,6 @@
             p.style.top = e.clientY + 'px';
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
-
             mainImage.style.transform = 'scale(0.85)';
             setTimeout(() => mainImage.style.transform = 'scale(1)', 50);
             updateUI();
@@ -214,20 +252,12 @@
 
         function buyUpgrade() {
             let cost = power * 1000;
-            if (clicks >= cost) {
-                clicks -= cost;
-                power++;
-                updateUI();
-            }
+            if (clicks >= cost) { clicks -= cost; power++; updateUI(); }
         }
 
         function buyAutoUpgrade() {
             let cost = (autoPower + 1) * 10000;
-            if (clicks >= cost) {
-                clicks -= cost;
-                autoPower++;
-                updateUI();
-            }
+            if (clicks >= cost) { clicks -= cost; autoPower++; updateUI(); }
         }
 
         function setSound(f, id) { 
@@ -235,16 +265,6 @@
             localStorage.setItem('b_sound', f);
             document.querySelectorAll('.panel:first-child .selector-card').forEach(el => el.classList.remove('active'));
             document.getElementById(id).classList.add('active');
-        }
-
-        function changeSkin(f, req, id) { 
-            // Разрешаем смену, если скин в списке открытых
-            if(unlockedSkins.includes(id) || id === 'skin0') { 
-                currentSkin = f; 
-                mainImage.src = f; 
-                document.querySelectorAll('.panel:last-child .selector-card').forEach(el => el.classList.remove('active'));
-                document.getElementById(id).classList.add('active');
-            } 
         }
 
         updateUI();
