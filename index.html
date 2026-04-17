@@ -1,68 +1,142 @@
-<script>
-    const i18n = {
-        ru: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1", alert: "Автокликер обнаружен!" },
-        ua: { click: "Клік", auto: "Авто", up: "Клік +1", autoUp: "Авто +1", alert: "Автоклікер виявлено!" },
-        en: { click: "Click", auto: "Auto", up: "Click +1", autoUp: "Auto +1", alert: "Autoclicker detected!" },
-        bg: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1", alert: "Открит автокликер!" }
-    };
-
-    let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
-    let power = parseInt(localStorage.getItem('b_power')) || 1;
-    let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
-    let volume = 0.5;
-    let currentSound = 'звук нажатия.mp3';
-    let currentSkin = 'банан.png';
-    let lang = 'ru';
-    let isBlocked = false;
-
-    // --- Система защиты ---
-    let clickTimes = [];
-    let lastTime = 0;
-
-    function playBulgarianVoice() {
-        const input = document.getElementById('source-text').value;
-        if(!input) return;
-        const v = new Audio('болгарский язык.mp3');
-        v.volume = volume;
-        v.playbackRate = 1.2;
-        v.play();
-    }
-
-    function setLang(l) {
-        lang = l;
-        document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById('btn-' + l).classList.add('active');
-        updateUI();
-    }
-
-    function setSound(s, id) {
-        currentSound = s;
-        document.getElementById('snd1').classList.remove('active');
-        document.getElementById('snd2').classList.remove('active');
-        document.getElementById(id).classList.add('active');
-    }
-
-    function changeVolume(v) { volume = v; }
-
-    function updateUI() {
-        const t = i18n[lang];
-        document.getElementById('counter').innerText = clicks.toLocaleString();
-        document.getElementById('power-display').innerText = `${t.click}: +${power}`;
-        document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/с`;
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banana Evolution: Fixed Edition</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a; --main: #ffcc00; --main-soft: rgba(255, 204, 0, 0.1);
+            --panel: rgba(20, 20, 20, 0.9); --border: rgba(50, 50, 50, 0.5);
+            --text-dark: #888; --success: #2ecc71; --blue: #3498db;
+        }
+        body { background-color: var(--bg); color: white; font-family: 'Montserrat', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none; }
         
-        document.getElementById('up-btn').innerText = `${t.up} (${power * 1000})`;
-        document.getElementById('auto-up-btn').innerText = `${t.autoUp} (${(autoPower + 1) * 10000})`;
+        #translator-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; padding-top: 50px; }
+        .trans-container { width: 90%; max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .trans-box { background: #111; border: 1px solid #333; border-radius: 12px; padding: 20px; height: 220px; position: relative; }
+        textarea { width: 100%; background: transparent; border: none; color: white; font-family: inherit; resize: none; font-size: 18px; outline: none; height: 140px; }
+        .listen-btn { position: absolute; bottom: 15px; right: 15px; background: none; border: none; cursor: pointer; font-size: 30px; }
 
-        localStorage.setItem('b_clicks', clicks);
-        localStorage.setItem('b_power', power);
-        localStorage.setItem('b_auto_power', autoPower);
+        #custom-alert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9); background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border); padding: 30px; border-radius: 24px; z-index: 3000; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s; }
+        #custom-alert.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
 
-        // Рендер скинов (кратко)
-        const list = document.getElementById('skin-list');
-        if (list.children.length <= 1) { // Чтобы не перерисовывать постоянно
+        .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
+        .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
+        #main-image { width: 350px; height: 350px; object-fit: contain; cursor: pointer; transition: 0.1s; }
+        
+        .side-panels-container { position: fixed; top: 20px; bottom: 20px; left: 20px; right: 20px; pointer-events: none; display: flex; justify-content: space-between; }
+        .panel { width: 260px; background: var(--panel); backdrop-filter: blur(15px); border-radius: 24px; border: 1px solid var(--border); padding: 20px; pointer-events: auto; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .upgrade-btn { width: 100%; padding: 12px; background: var(--success); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; font-size: 11px; }
+        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; }
+        .lang-btn.active { background: var(--main); color: black; }
+        .plus-one { position: fixed; color: var(--main); font-weight: 900; font-size: 40px; pointer-events: none; animation: floatUp 0.6s forwards; z-index: 100; }
+        @keyframes floatUp { 0% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120px); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="custom-alert">
+        <h2 style="margin:0; color: #ff4444;">Обнаружен кликер!</h2>
+        <p>Слишком ровный ритм. Бан на 5 секунд.</p>
+    </div>
+
+    <div id="translator-page">
+        <h1 style="color: white; margin-bottom: 30px;">Переводчик</h1>
+        <div class="trans-container">
+            <div class="trans-box"><textarea id="source-text" placeholder="Введите текст..."></textarea></div>
+            <div class="trans-box"><div style="height: 140px; display: flex; align-items: center; justify-content: center; color: #444;">[Аудио]</div><button class="listen-btn" onclick="playBulgarianVoice()">🔊</button></div>
+        </div>
+        <button class="upgrade-btn" style="margin-top:20px; width: auto;" onclick="toggleTranslator(false)">Назад</button>
+    </div>
+
+    <div class="main-stage">
+        <div class="stats-count" id="counter">0</div>
+        <div style="display:flex; gap:15px; font-weight: 700; color: var(--text-dark);">
+            <span id="power-display">Клик: +1</span>
+            <span id="auto-display" style="color: var(--blue);">Авто: +0/с</span>
+        </div>
+        <img src="банан.png" id="main-image">
+    </div>
+
+    <div class="side-panels-container">
+        <div class="panel">
+            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <button class="lang-btn active" id="btn-ru" onclick="setLang('ru')">RU</button>
+                <button class="lang-btn" id="btn-ua" onclick="setLang('ua')">UA</button>
+                <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+                <button class="lang-btn" id="btn-bg" onclick="setLang('bg')">BG (Secret)</button>
+                <button class="lang-btn" style="background:var(--blue)" onclick="toggleTranslator(true)">🌐</button>
+            </div>
+            <button class="upgrade-btn" id="up-btn" onclick="buyUpgrade()">Клик +1</button>
+            <button class="upgrade-btn" id="auto-up-btn" style="background:var(--blue)" onclick="buyAutoUpgrade()">Авто +1</button>
+            <input type="range" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)" style="width:100%;">
+        </div>
+        <div class="panel" id="skin-list">
+            <div style="font-size:10px; color:var(--text-dark); text-transform:uppercase;">Скины</div>
+        </div>
+    </div>
+
+    <script>
+        const i18n = {
+            ru: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1" },
+            ua: { click: "Клік", auto: "Авто", up: "Клік +1", autoUp: "Авто +1" },
+            en: { click: "Click", auto: "Auto", up: "Click +1", autoUp: "Auto +1" },
+            bg: { click: "Клик", auto: "Авто", up: "Клик +1", autoUp: "Авто +1" }
+        };
+
+        let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
+        let power = parseInt(localStorage.getItem('b_power')) || 1;
+        let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
+        let volume = 0.5;
+        let currentSound = 'звук нажатия.mp3';
+        let currentSkin = 'банан.png';
+        let lang = 'ru';
+        let isBlocked = false;
+
+        let clickTimes = [];
+        let lastTime = 0;
+        let bgMusic = new Audio('болгарский язык.mp3'); bgMusic.loop = true;
+
+        const skinsDB = [
+            { name: 'Банан', file: 'банан.png', price: 0 },
+            { name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
+            { name: 'Ишак', file: 'ишак.png', price: 1000000 },
+            { name: 'Свинобан', file: 'свинобан.png', price: 5000000 }
+        ];
+
+        function playBulgarianVoice() {
+            const v = new Audio('болгарский язык.mp3');
+            v.volume = volume;
+            v.play();
+        }
+
+        function setLang(l) {
+            lang = l;
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + l).classList.add('active');
+            if (l === 'bg') { bgMusic.volume = volume; bgMusic.play(); } else { bgMusic.pause(); }
+            updateUI();
+        }
+
+        function updateUI() {
+            const t = i18n[lang];
+            document.getElementById('counter').innerText = clicks.toLocaleString();
+            document.getElementById('power-display').innerText = `${t.click}: +${power}`;
+            document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/с`;
+            document.getElementById('up-btn').innerText = `${t.up} (${power * 1000})`;
+            document.getElementById('auto-up-btn').innerText = `${t.autoUp} (${(autoPower + 1) * 10000})`;
+
+            localStorage.setItem('b_clicks', clicks);
+            localStorage.setItem('b_power', power);
+            localStorage.setItem('b_auto_power', autoPower);
+
+            const list = document.getElementById('skin-list');
+            list.innerHTML = '<div style="font-size:10px; color:var(--text-dark); text-transform:uppercase;">Скины</div>';
             skinsDB.forEach(skin => {
                 const card = document.createElement('div');
-                card.className = "selector-card";
+                card.style = `padding:8px; background:rgba(40,40,40,0.5); border-radius:12px; cursor:pointer; display:flex; align-items:center; gap:10px; margin-top:5px; border: 2px solid ${currentSkin === skin.file ? 'var(--main)' : 'transparent'}`;
                 card.onclick = () => {
                     if (clicks >= skin.price || currentSkin === skin.file) {
                         if (currentSkin !== skin.file) clicks -= skin.price;
@@ -71,92 +145,67 @@
                         updateUI();
                     }
                 };
-                card.innerHTML = `<img src="${skin.file}" style="width:30px"> <span>${skin.name}</span>`;
+                card.innerHTML = `<img src="${skin.file}" style="width:30px; height:30px;"> <div><div style="font-size:11px;">${skin.name}</div><div style="font-size:9px; color:var(--main)">${skin.price}</div></div>`;
                 list.appendChild(card);
             });
         }
-    }
 
-    // ГЛАВНАЯ ЛОГИКА ПРОВЕРКИ
-    document.getElementById('main-image').addEventListener('mousedown', function(e) {
-        if (isBlocked) return;
+        document.getElementById('main-image').onmousedown = function(e) {
+            if (isBlocked || !e.isTrusted) return;
 
-        // 1. Проверка на эмуляцию
-        if (!e.isTrusted) { activateBlock(); return; }
+            const now = performance.now();
+            const gap = now - lastTime;
+            lastTime = now;
 
-        const now = performance.now();
-        const gap = now - lastTime;
-        lastTime = now;
+            clickTimes.push(gap);
+            if (clickTimes.length > 20) clickTimes.shift();
 
-        clickTimes.push(gap);
-        if (clickTimes.length > 20) clickTimes.shift();
-
-        // 2. Анализ ритма (если последние 10 кликов слишком одинаковые)
-        if (clickTimes.length >= 10) {
-            const last10 = clickTimes.slice(-10);
-            const diffs = [];
-            for(let i=1; i<last10.length; i++) {
-                diffs.push(Math.abs(last10[i] - last10[i-1]));
+            if (clickTimes.length >= 10) {
+                const last10 = clickTimes.slice(-10);
+                const avg = last10.reduce((a, b) => a + b) / 10;
+                const variance = last10.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / 10;
+                if (variance < 3) { activateBlock(); return; }
             }
-            // Если среднее отклонение меньше 3мс - это бот
-            const avgDiff = diffs.reduce((a,b) => a+b) / diffs.length;
-            if (avgDiff < 3) { activateBlock(); return; }
+
+            if (checkSpeed() > 25) { activateBlock(); return; }
+
+            clicks += power;
+            let s = new Audio(currentSound); s.volume = volume; s.play();
+            
+            const p = document.createElement('div');
+            p.innerText = `+${power}`; p.className = 'plus-one';
+            p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
+            document.body.appendChild(p);
+            setTimeout(() => p.remove(), 600);
+            updateUI();
+        };
+
+        function checkSpeed() {
+            if (!window.rc) window.rc = [];
+            window.rc.push(performance.now());
+            window.rc = window.rc.filter(t => performance.now() - t < 1000);
+            return window.rc.length;
         }
 
-        // 3. Анализ скорости (больше 25 кликов в сек)
-        const clicksLastSec = clickTimes.filter(t => t < 1000).length;
-        if (clickHistoryCount() > 25) { activateBlock(); return; }
+        function activateBlock() {
+            isBlocked = true;
+            document.getElementById('main-image').style.filter = "grayscale(1) contrast(3) brightness(0.2)";
+            document.getElementById('custom-alert').classList.add('show');
+            setTimeout(() => {
+                isBlocked = false;
+                document.getElementById('main-image').style.filter = "";
+                document.getElementById('custom-alert').classList.remove('show');
+                clickTimes = []; window.rc = [];
+            }, 5000);
+        }
 
-        // Клик разрешен
-        clicks += power;
-        let s = new Audio(currentSound); s.volume = volume; s.play();
-        
-        // Эффект +1
-        const p = document.createElement('div');
-        p.innerText = `+${power}`; p.className = 'plus-one';
-        p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 600);
+        function toggleTranslator(s) { document.getElementById('translator-page').style.display = s ? 'flex' : 'none'; }
+        function buyUpgrade() { let c = power * 1000; if(clicks >= c){ clicks -= c; power++; updateUI(); } }
+        function buyAutoUpgrade() { let c = (autoPower + 1) * 10000; if(clicks >= c){ clicks -= c; autoPower++; updateUI(); } }
+        function changeVolume(v) { volume = v; bgMusic.volume = v; }
+
+        setInterval(() => { if(!isBlocked && autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
         updateUI();
-    });
-
-    function clickHistoryCount() {
-        const now = performance.now();
-        // Мы считаем количество вызовов mousedown за последнюю секунду
-        if (!window.recentClicks) window.recentClicks = [];
-        window.recentClicks.push(now);
-        window.recentClicks = window.recentClicks.filter(t => now - t < 1000);
-        return window.recentClicks.length;
-    }
-
-    function activateBlock() {
-        isBlocked = true;
-        const img = document.getElementById('main-image');
-        img.style.filter = "grayscale(1) contrast(3) brightness(0.2)";
-        document.getElementById('custom-alert').classList.add('show');
-        
-        setTimeout(() => {
-            isBlocked = false;
-            img.style.filter = "";
-            document.getElementById('custom-alert').classList.remove('show');
-            clickTimes = [];
-            window.recentClicks = [];
-        }, 5000);
-    }
-
-    function toggleTranslator(s) { document.getElementById('translator-page').style.display = s ? 'flex' : 'none'; }
-    function buyUpgrade() { let c = power * 1000; if(clicks >= c){ clicks -= c; power++; updateUI(); } }
-    function buyAutoUpgrade() { let c = (autoPower + 1) * 10000; if(clicks >= c){ clicks -= c; autoPower++; updateUI(); } }
-
-    setInterval(() => { if(!isBlocked && autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
-    
-    // Начальная загрузка скинов
-    const skinsDB = [
-        { name: 'Банан', file: 'банан.png', price: 0 },
-        { name: 'Пу-пу-пу', file: 'пу-пу-пу.png', price: 1000 },
-        { name: 'Бурмолдан', file: 'банан-бурмолдан.png', price: 5000 },
-        { name: 'Ишак', file: 'ишак.png', price: 1000000 }
-    ];
-
-    updateUI();
-</script>
+    </script>
+</body>
+</html>
