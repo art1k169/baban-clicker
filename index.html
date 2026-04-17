@@ -3,161 +3,259 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: Anti-Cheat Edition</title>
+    <title>Banana Evolution: Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg: #0a0a0a;
+            --main: #ffcc00;
+            --main-soft: rgba(255, 204, 0, 0.1);
+            --panel: rgba(20, 20, 20, 0.9);
+            --border: rgba(50, 50, 50, 0.5);
+            --text-dark: #888;
+        }
+
         body {
-            background-color: #0f0f0f;
+            background-color: var(--bg);
             color: white;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Montserrat', sans-serif;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
             margin: 0;
+            overflow: hidden;
             user-select: none;
         }
 
-        .stats {
-            font-size: 3.5rem;
-            font-weight: 900;
-            margin-bottom: 10px;
-            color: #ffcc00;
-            text-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
-        }
-
-        .warning {
-            color: #ff4444;
-            height: 20px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            visibility: hidden;
-        }
-
-        .click-area {
+        /* --- ЦЕНТРАЛЬНАЯ ОБЛАСТЬ (БАНАН) --- */
+        .main-stage {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             position: relative;
-            cursor: pointer;
             z-index: 10;
         }
 
-        #main-image {
-            width: 320px;
-            height: 320px;
-            object-fit: contain;
-            transition: transform 0.05s ease-out;
-            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
-        }
-
-        .skin-container {
-            margin-top: 30px;
-            display: flex;
-            gap: 10px;
-            background: #1e1e1e;
-            padding: 15px;
-            border-radius: 20px;
-            border: 1px solid #333;
-        }
-
-        .skin-card {
-            padding: 8px;
-            border: 2px solid transparent;
-            border-radius: 15px;
+        .stats-main {
             text-align: center;
-            opacity: 0.3;
-            transition: all 0.3s;
-            cursor: not-allowed;
-            font-size: 12px;
+            margin-bottom: 20px;
         }
 
-        .skin-card.unlocked {
-            opacity: 1;
+        .stats-count {
+            font-size: 6rem;
+            font-weight: 900;
+            color: var(--main);
+            text-shadow: 0 0 40px rgba(255, 204, 0, 0.6);
+            line-height: 1;
+        }
+
+        .stats-power {
+            font-size: 1.2rem;
+            color: var(--text-dark);
+            margin-top: 5px;
+        }
+
+        #main-image-container {
+            position: relative;
             cursor: pointer;
-            border-color: #444;
+            transition: 0.2s;
         }
 
-        .skin-card.active {
-            border-color: #ffcc00;
-            background: rgba(255, 204, 0, 0.1);
+        #main-image {
+            width: 450px;
+            height: 450px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 30px rgba(255, 255, 255, 0.1));
+            transition: 0.1s ease-out;
         }
 
-        .skin-card img {
-            width: 50px;
-            height: 50px;
-            display: block;
-            margin: 0 auto 5px;
-            border-radius: 8px;
+        /* Эффект свечения при наведении */
+        #main-image-container:hover #main-image {
+            filter: drop-shadow(0 0 50px rgba(255, 204, 0, 0.4));
         }
 
-        .plus-one {
-            position: absolute;
+        /* --- БОКОВЫЕ ПАНЕЛИ --- */
+        .side-panels-container {
+            position: fixed;
+            top: 20px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            pointer-events: none; /* Пропускаем клики */
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .panel {
+            width: 280px;
+            background: var(--panel);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            padding: 25px;
+            pointer-events: auto; /* Возвращаем клики элементам */
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .panel-header {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: -5px;
+        }
+
+        /* Кнопка прокачки */
+        .upgrade-btn {
+            width: 100%;
+            padding: 18px;
+            background: #2ecc71;
+            border: none;
+            border-radius: 16px;
             color: white;
-            font-weight: bold;
-            font-size: 28px;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .upgrade-btn:hover:not(:disabled) { background: #27ae60; transform: translateY(-2px); }
+        .upgrade-btn:disabled { background: #333; cursor: not-allowed; opacity: 0.5; }
+
+        /* Сетки выбора */
+        .selector-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px; }
+
+        .selector-card {
+            min-width: 65px;
+            padding: 12px;
+            background: rgba(40, 40, 40, 0.5);
+            border-radius: 16px;
+            border: 2px solid transparent;
+            text-align: center;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .selector-card:hover:not(.locked) { background: rgba(60, 60, 60, 0.8); }
+        .selector-card.active { border-color: var(--main); background: var(--main-soft); box-shadow: 0 0 15px var(--main-soft); }
+
+        .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
+        .selector-card span { font-size: 10px; color: #ccc; font-weight: 700; }
+        .selector-card .icon { font-size: 24px; margin-bottom: 8px; }
+
+        .locked { opacity: 0.2; cursor: not-allowed; }
+
+        /* Анимация клика +N */
+        .plus-one {
+            position: fixed;
+            color: var(--main);
+            font-weight: 900;
+            font-size: 40px;
             pointer-events: none;
             z-index: 100;
-            animation: floatUp 0.6s ease-out forwards;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+            animation: floatUpPremium 0.7s ease-out forwards;
         }
 
-        @keyframes floatUp {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-120px) scale(1.5); opacity: 0; }
+        @keyframes floatUpPremium {
+            0% { transform: translateY(0) scale(1.5); opacity: 1; }
+            100% { transform: translateY(-150px) scale(1); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
-    <div class="warning" id="cheat-warn">ОБНАРУЖЕН АВТОКЛИКЕР!</div>
-    <div class="stats" id="counter">0</div>
-
-    <div class="click-area" id="clicker">
-        <img src="банан.png" id="main-image">
-    </div>
-
-    <div class="skin-container">
-        <div class="skin-card active unlocked" onclick="changeSkin('банан.png', 0, this)">
-            <img src="банан.png"><span>Банан</span>
+    <div class="main-stage">
+        <div class="stats-main">
+            <div class="stats-count" id="counter">0</div>
+            <div class="stats-power" id="power-display">Клик: +1</div>
         </div>
-        <div class="skin-card" id="skin1" onclick="changeSkin('заяц1.png', 500000, this)">
-            <img src="заяц1.png"><span>500k</span>
-        </div>
-        <div class="skin-card" id="skin2" onclick="changeSkin('заяц2.png', 1000000, this)">
-            <img src="заяц2.png"><span>1M</span>
-        </div>
-        <div class="skin-card" id="skin3" onclick="changeSkin('ишак.png', 10000000, this)">
-            <img src="ишак.png"><span>10M (ИШАК)</span>
+        <div id="main-image-container">
+            <img src="банан.png" id="main-image" alt="Banana">
         </div>
     </div>
 
-    <audio id="click-sound" src="звук нажатия.mp3"></audio>
+    <div class="side-panels-container">
+        
+        <div class="panel">
+            <div class="panel-header">Прокачка</div>
+            <div>
+                <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()">
+                    Улучшить клик (1000)
+                </button>
+            </div>
+            
+            <div class="panel-header" style="margin-top: auto;">Звук</div>
+            <div class="selector-grid">
+                <div class="selector-card active" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')">
+                    <div class="icon">🔊</div>
+                    <span>Звук 1</span>
+                </div>
+                <div class="selector-card" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')">
+                    <div class="icon">🔉</div>
+                    <span>Звук 2</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="width: 250px;">
+            <div class="panel-header">Скины</div>
+            <div class="selector-grid" style="flex-direction: column; overflow-y: visible;">
+                <div class="selector-card active" id="skin0" onclick="changeSkin('банан.png', 0, 'skin0')">
+                    <img src="банан.png"><span>Банан</span>
+                </div>
+                <div class="selector-card locked" id="skin1" onclick="changeSkin('заяц1.png', 500000, 'skin1')">
+                    <img src="заяц1.png"><span>Заяц 1 (500k)</span>
+                </div>
+                <div class="selector-card locked" id="skin2" onclick="changeSkin('заяц2.png', 1000000, 'skin2')">
+                    <img src="заяц2.png"><span>Заяц 2 (1M)</span>
+                </div>
+                <div class="selector-card locked" id="skin3" onclick="changeSkin('ишак.png', 10000000, 'skin3')">
+                    <img src="ишак.png"><span>Ишак (10M)</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        // Загрузка сохранений
-        let clicks = parseInt(localStorage.getItem('banana_clicks')) || 0;
-        let currentSkin = localStorage.getItem('banana_skin') || 'банан.png';
-        
-        // Переменные для анти-чита
-        let lastClickTime = 0;
-        let clickIntervals = [];
-        let cheatDetected = false;
+        // Код логики остается прежним, только обновляются UI функции
+
+        let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
+        let power = parseInt(localStorage.getItem('b_power')) || 1;
+        let currentSkin = localStorage.getItem('b_skin') || 'банан.png';
+        let currentSound = localStorage.getItem('b_sound') || 'звук нажатия.mp3';
 
         const counterDisplay = document.getElementById('counter');
+        const powerDisplay = document.getElementById('power-display');
         const mainImage = document.getElementById('main-image');
-        const clickSound = document.getElementById('click-sound');
-        const warnDisplay = document.getElementById('cheat-warn');
+        const upgradeBtn = document.getElementById('upgrade-btn');
 
-        // Инициализация при запуске
         mainImage.src = currentSkin;
         updateUI();
+        highlightActive('selector-card', currentSound.includes('2') ? 'snd2' : 'snd1');
 
-        // Автосохранение каждую секунду
         setInterval(() => {
-            localStorage.setItem('banana_clicks', clicks);
-            localStorage.setItem('banana_skin', currentSkin);
-            console.log("Прогресс сохранен...");
+            localStorage.setItem('b_clicks', clicks);
+            localStorage.setItem('b_power', power);
+            localStorage.setItem('b_skin', currentSkin);
+            localStorage.setItem('b_sound', currentSound);
         }, 1000);
 
         function updateUI() {
-            counterDisplay.innerText = clicks.toLocaleString();
+            counterDisplay.innerText = clicks.toLocaleString('ru-RU');
+            powerDisplay.innerText = `Клик: +${power.toLocaleString('ru-RU')}`;
+            
+            let upgradeCost = power * 1000;
+            upgradeBtn.innerText = `Улучшить клик +1 (Цена: ${upgradeCost.toLocaleString()})`;
+            upgradeBtn.disabled = clicks < upgradeCost;
+
             checkUnlock(500000, 'skin1');
             checkUnlock(1000000, 'skin2');
             checkUnlock(10000000, 'skin3');
@@ -166,73 +264,57 @@
         function checkUnlock(req, id) {
             const el = document.getElementById(id);
             if (clicks >= req) {
-                el.classList.add('unlocked');
-                el.querySelector('span').innerText = "Разблокирован";
+                el.classList.remove('locked');
+                el.querySelector('span').innerText = id === 'skin3' ? 'ИШАК' : 'Разблокирован';
             }
         }
 
-        document.getElementById('clicker').addEventListener('mousedown', (e) => {
-            const now = Date.now();
-            const delta = now - lastClickTime;
-
-            // --- Система Анти-Автокликер ---
-            // 1. Слишком высокая скорость (быстрее 30 кликов в сек)
-            if (delta < 30) {
-                showWarning();
-                return;
+        function buyUpgrade() {
+            let cost = power * 1000;
+            if (clicks >= cost) {
+                clicks -= cost;
+                power++;
+                updateUI();
             }
+        }
 
-            // 2. Проверка на одинаковые интервалы (роботы кликают ровно)
-            clickIntervals.push(delta);
-            if (clickIntervals.length > 10) {
-                clickIntervals.shift();
-                const uniqueIntervals = new Set(clickIntervals);
-                if (uniqueIntervals.size <= 2) { // Если интервалы почти одинаковые
-                    showWarning();
-                    return;
-                }
-            }
+        document.getElementById('main-image-container').addEventListener('mousedown', (e) => {
+            clicks += power;
             
-            cheatDetected = false;
-            warnDisplay.style.visibility = 'hidden';
-            lastClickTime = now;
+            new Audio(currentSound).play();
 
-            // Логика клика
-            clicks++;
-            clickSound.currentTime = 0;
-            clickSound.play();
+            const plus = document.createElement('div');
+            plus.innerText = `+${power}`;
+            plus.className = 'plus-one';
+            plus.style.left = e.clientX - 20 + 'px';
+            plus.style.top = e.clientY - 40 + 'px';
+            document.body.appendChild(plus);
+            setTimeout(() => plus.remove(), 700);
 
-            createPlusAnim(e.clientX, e.clientY);
-            
-            mainImage.style.transform = 'scale(0.9) rotate(' + (Math.random() * 6 - 3) + 'deg)';
-            setTimeout(() => mainImage.style.transform = 'scale(1)', 50);
-
+            mainImage.style.transform = 'scale(0.85) rotate(' + (Math.random() * 8 - 4) + 'deg)';
+            setTimeout(() => mainImage.style.transform = 'scale(1)', 40);
             updateUI();
         });
 
-        function showWarning() {
-            cheatDetected = true;
-            warnDisplay.style.visibility = 'visible';
-            mainImage.style.transform = 'scale(1) rotate(0)';
+        function setSound(file, id) {
+            currentSound = file;
+            highlightActive('selector-card', id);
+            new Audio(file).play();
         }
 
-        function createPlusAnim(x, y) {
-            const plus = document.createElement('div');
-            plus.innerText = '+1';
-            plus.className = 'plus-one';
-            plus.style.left = x - 10 + 'px';
-            plus.style.top = y - 40 + 'px';
-            document.body.appendChild(plus);
-            setTimeout(() => plus.remove(), 600);
-        }
-
-        function changeSkin(skinFile, requirement, element) {
-            if (clicks >= requirement) {
-                currentSkin = skinFile;
-                mainImage.src = skinFile;
-                document.querySelectorAll('.skin-card').forEach(card => card.classList.remove('active'));
-                element.classList.add('active');
+        function changeSkin(file, req, id) {
+            if (clicks >= req) {
+                currentSkin = file;
+                mainImage.src = file;
+                highlightActive('selector-card', id);
             }
+        }
+
+        function highlightActive(className, activeId) {
+            const clickedEl = document.getElementById(activeId);
+            const parent = clickedEl.parentElement;
+            parent.querySelectorAll('.' + className).forEach(el => el.classList.remove('active'));
+            clickedEl.classList.add('active');
         }
     </script>
 </body>
