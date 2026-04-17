@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banana Evolution: International</title>
+    <title>Banana Evolution: Translator Edition</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -17,19 +17,32 @@
             display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; overflow: hidden; user-select: none;
         }
 
-        /* --- UI элементы --- */
+        /* --- Переводчик (Страница внутри сайта) --- */
+        #translator-page {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; padding-top: 50px;
+        }
+        .trans-container { width: 90%; max-width: 800px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .trans-box { background: #111; border: 1px solid #333; border-radius: 12px; padding: 20px; height: 200px; position: relative; }
+        .trans-header { color: var(--blue); font-size: 12px; margin-bottom: 10px; font-weight: 700; text-transform: uppercase; }
+        textarea { width: 100%; background: transparent; border: none; color: white; font-family: inherit; resize: none; font-size: 18px; outline: none; height: 140px; }
+        .listen-btn { position: absolute; bottom: 15px; right: 15px; background: none; border: none; cursor: pointer; font-size: 24px; color: #555; transition: 0.2s; }
+        .listen-btn:hover { color: var(--main); transform: scale(1.1); }
+        .back-btn { margin-top: 30px; background: #222; border: 1px solid #444; color: white; padding: 10px 25px; border-radius: 8px; cursor: pointer; }
+
+        /* --- Остальной интерфейс --- */
         #custom-alert {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.9);
             background: var(--panel); backdrop-filter: blur(20px); border: 1px solid var(--border);
-            padding: 30px; border-radius: 24px; z-index: 1000; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6); opacity: 0; pointer-events: none; transition: 0.3s;
+            padding: 30px; border-radius: 24px; z-index: 1000; text-align: center; opacity: 0; pointer-events: none; transition: 0.3s;
         }
         #custom-alert.show { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
         .alert-btn { background: var(--main); color: black; border: none; padding: 10px 30px; border-radius: 12px; font-weight: 700; cursor: pointer; margin-top: 15px; }
 
         .lang-selector { display: flex; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
-        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; transition: 0.2s; }
-        .lang-btn.active { background: var(--main); color: black; border-color: var(--main); }
+        .lang-btn { background: #222; border: 1px solid #444; color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; }
+        .lang-btn.active { background: var(--main); color: black; }
+        .trans-btn-trigger { background: var(--blue); border: none; color: white; padding: 5px 10px; border-radius: 8px; cursor: pointer; font-size: 10px; font-weight: 700; }
 
         .main-stage { display: flex; flex-direction: column; align-items: center; z-index: 10; }
         .stats-count { font-size: 6rem; font-weight: 900; color: var(--main); text-shadow: 0 0 40px rgba(255, 204, 0, 0.6); line-height: 1; }
@@ -40,12 +53,11 @@
         .panel { width: 280px; background: var(--panel); backdrop-filter: blur(10px); border-radius: 24px; border: 1px solid var(--border); padding: 25px; pointer-events: auto; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
         .panel-header { font-size: 11px; font-weight: 700; color: var(--text-dark); text-transform: uppercase; letter-spacing: 2px; }
 
-        .upgrade-btn { width: 100%; padding: 15px; background: var(--success); border: none; border-radius: 16px; color: white; font-weight: 700; cursor: pointer; transition: 0.3s; font-size: 12px; }
+        .upgrade-btn { width: 100%; padding: 15px; background: var(--success); border: none; border-radius: 16px; color: white; font-weight: 700; cursor: pointer; font-size: 12px; }
         .upgrade-btn.auto { background: var(--blue); }
         .upgrade-btn:disabled { background: #333; opacity: 0.5; }
 
-        .selector-grid { display: flex; flex-direction: column; gap: 10px; }
-        .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; }
+        .selector-card { padding: 12px; background: rgba(40,40,40,0.5); border-radius: 16px; border: 2px solid transparent; text-align: center; cursor: pointer; margin-bottom: 10px; }
         .selector-card.active { border-color: var(--main); background: var(--main-soft); }
         .selector-card img { width: 45px; height: 45px; display: block; margin: 0 auto 8px; border-radius: 8px; }
 
@@ -55,10 +67,28 @@
 </head>
 <body>
 
+    <div id="translator-page">
+        <h1 style="color: white; margin-bottom: 40px; font-weight: 400;">Google <span style="font-weight: 700;">Переводчик</span></h1>
+        <div class="trans-container">
+            <div class="trans-box">
+                <div class="trans-header">Русский</div>
+                <textarea id="source-text" placeholder="Введите текст..."></textarea>
+            </div>
+            <div class="trans-box">
+                <div class="trans-header">Болгарский</div>
+                <div style="height: 140px; display: flex; align-items: center; justify-content: center; color: #333; font-style: italic;">
+                    Текст скрыт системой
+                </div>
+                <button class="listen-btn" onclick="speakBulgarian()">🔊</button>
+            </div>
+        </div>
+        <button class="back-btn" onclick="toggleTranslator(false)">Вернуться в игру</button>
+    </div>
+
     <div id="custom-alert">
         <h2 id="alert-title"></h2>
         <p id="alert-msg"></p>
-        <button class="alert-btn" id="alert-confirm-btn" onclick="closeAlert()">ОК</button>
+        <button class="alert-btn" onclick="closeAlert()">ОК</button>
     </div>
 
     <div class="main-stage">
@@ -72,101 +102,105 @@
 
     <div class="side-panels-container">
         <div class="panel">
-            <div class="panel-header" id="header-lang">Язык / Language</div>
+            <div class="panel-header">Язык / Language</div>
             <div class="lang-selector">
-                <button class="lang-btn" onclick="setLang('ru')">RU</button>
+                <button class="lang-btn active" onclick="setLang('ru')">RU</button>
                 <button class="lang-btn" onclick="setLang('ua')">UA</button>
                 <button class="lang-btn" onclick="setLang('en')">EN</button>
                 <button class="lang-btn" onclick="setLang('bg')">BG (Secret)</button>
+                <button class="trans-btn-trigger" onclick="toggleTranslator(true)">Переводчик</button>
             </div>
 
-            <div class="panel-header" id="header-upgrades">Прокачка</div>
+            <div class="panel-header">Прокачка</div>
             <button class="upgrade-btn" id="upgrade-btn" onclick="buyUpgrade()"></button>
             <button class="upgrade-btn auto" id="auto-upgrade-btn" onclick="buyAutoUpgrade()"></button>
             
-            <div class="panel-header" id="header-volume" style="margin-top: 10px;">Громкость</div>
+            <div class="panel-header" style="margin-top: 10px;">Звук клика</div>
+            <div style="display:flex; gap:10px;">
+                <div class="lang-btn" id="snd1" onclick="setSound('звук нажатия.mp3', 'snd1')" style="flex:1; text-align:center">Звук 1</div>
+                <div class="lang-btn" id="snd2" onclick="setSound('звук нажатия2.mp3', 'snd2')" style="flex:1; text-align:center">Звук 2</div>
+            </div>
+
+            <div class="panel-header" style="margin-top: 10px;">Громкость</div>
             <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.5" oninput="changeVolume(this.value)">
         </div>
 
         <div class="panel">
-            <div class="panel-header" id="header-skins">Скины</div>
+            <div class="panel-header">Скины</div>
             <div class="selector-grid" id="skin-list"></div>
         </div>
     </div>
 
     <script>
-        // Переводы
         const i18n = {
-            ru: { click: "Клик", auto: "Авто", upClick: "Клик +1", upAuto: "Авто +1", shop: "Магазин", buy: "КУПИТЬ", ban: "Бан на 5 сек", cheat: "Обнаружен скрипт!", alertTitle: "Внимание", lowClicks: "Недостаточно кликов!", vol: "Громкость", skins: "Скины" },
-            ua: { click: "Клік", auto: "Авто", upClick: "Клік +1", upAuto: "Авто +1", shop: "Магазин", buy: "КУПИТИ", ban: "Бан на 5 сек", cheat: "Виявлено скрипт!", alertTitle: "Увага", lowClicks: "Недостатньо кліків!", vol: "Гучність", skins: "Скіни" },
-            en: { click: "Click", auto: "Auto", upClick: "Click +1", upAuto: "Auto +1", shop: "Shop", buy: "BUY", ban: "Ban for 5 sec", cheat: "Script detected!", alertTitle: "Warning", lowClicks: "Not enough clicks!", vol: "Volume", skins: "Skins" },
-            bg: { click: "Клик", auto: "Авто", upClick: "Клик +1", upAuto: "Авто +1", shop: "Магазин", buy: "КУПИ", ban: "Бан за 5 сек", cheat: "Открит скрипт!", alertTitle: "Внимание", lowClicks: "Няма достатъчно кликвания!", vol: "Сила на звука", skins: "Скинове" }
+            ru: { click: "Клик", auto: "Авто", upClick: "Клик +1", upAuto: "Авто +1", alertTitle: "Внимание", lowClicks: "Недостаточно кликов!", cheat: "Обнаружен скрипт!" },
+            ua: { click: "Клік", auto: "Авто", upClick: "Клік +1", upAuto: "Авто +1", alertTitle: "Увага", lowClicks: "Недостатньо кліків!", cheat: "Виявлено скрипт!" },
+            en: { click: "Click", auto: "Auto", upClick: "Click +1", upAuto: "Auto +1", alertTitle: "Warning", lowClicks: "Not enough clicks!", cheat: "Script detected!" },
+            bg: { click: "Клик", auto: "Авто", upClick: "Клик +1", upAuto: "Авто +1", alertTitle: "Внимание", lowClicks: "Няма кликвания!", cheat: "Открит скрипт!" }
         };
 
-        let lang = localStorage.getItem('b_lang') || 'ru';
+        let lang = 'ru';
         let clicks = parseInt(localStorage.getItem('b_clicks')) || 0;
         let power = parseInt(localStorage.getItem('b_power')) || 1;
         let autoPower = parseInt(localStorage.getItem('b_auto_power')) || 0;
-        let volume = parseFloat(localStorage.getItem('b_volume')) || 0.5;
-        let currentSkin = localStorage.getItem('b_skin') || 'банан.png';
-        let unlockedSkins = JSON.parse(localStorage.getItem('b_unlocked')) || ['skin0'];
-        
-        let lastClickTime = 0;
-        let clickHistory = []; 
-        let isFrozen = false;
+        let volume = 0.5;
+        let currentSound = 'звук нажатия.mp3';
+        let currentSkin = 'банан.png';
+        let unlockedSkins = ['skin0'];
         let bgMusic = new Audio('болгарский язык.mp3');
         bgMusic.loop = true;
 
         const skinsDB = [
-            { id: 'skin0', name: 'Banana', file: 'банан.png', price: 0 },
-            { id: 'skin_pupu', name: 'Pu-pu-pu', file: 'пу-пу-пу.png', price: 1000 },
-            { id: 'skin_burm', name: 'Burmoll', file: 'банан-бурмолдан.png', price: 5000 },
-            { id: 'skin1', name: 'Rabbit 1', file: 'заяц1.png', price: 500000 },
-            { id: 'skin2', name: 'Rabbit 2', file: 'заяц2.png', price: 1000000 },
-            { id: 'skin_bak', name: 'Bak', file: 'бак.png', price: 1000000 },
-            { id: 'skin3', name: 'Ishak', file: 'ишак.png', price: 10000000 },
-            { id: 'skin_svin', name: 'Svinoban', file: 'свинобан.png', price: 20000000 }
+            { id: 'skin0', name: 'Банан', file: 'банан.png', price: 0 },
+            { id: 'skin1', name: 'Заяц 1', file: 'заяц1.png', price: 1000 },
+            { id: 'skin2', name: 'Заяц 2', file: 'заяц2.png', price: 5000 },
+            { id: 'skin3', name: 'Ишак', file: 'ишак.png', price: 10000 }
         ];
+
+        function toggleTranslator(show) {
+            document.getElementById('translator-page').style.display = show ? 'flex' : 'none';
+        }
+
+        function speakBulgarian() {
+            const text = document.getElementById('source-text').value;
+            if(!text) return;
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'bg-BG';
+            
+            // Динамическая интонация в зависимости от слов
+            if (text.length < 10) {
+                utterance.pitch = 1.5; // Тонкий/веселый
+                utterance.rate = 1.2;
+            } else if (text.includes('!')) {
+                utterance.pitch = 2.0; // Эмоциональный
+                utterance.volume = 1.0;
+            } else {
+                utterance.pitch = 0.8; // Грубый/серьезный
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
 
         function setLang(l) {
             lang = l;
-            localStorage.setItem('b_lang', l);
-            
-            // Логика болгарского звука
-            if (l === 'bg') {
-                bgMusic.volume = volume;
-                bgMusic.play().catch(e => console.log("Нужен клик для музыки"));
-            } else {
-                bgMusic.pause();
-                bgMusic.currentTime = 0;
-            }
-
-            document.querySelectorAll('.lang-btn').forEach(b => {
-                b.classList.toggle('active', b.innerText.toLowerCase().includes(l));
-            });
+            if (l === 'bg') { bgMusic.volume = volume; bgMusic.play(); } 
+            else { bgMusic.pause(); bgMusic.currentTime = 0; }
             updateUI();
         }
 
         function updateUI() {
             const t = i18n[lang];
-            document.getElementById('counter').innerText = clicks.toLocaleString('ru-RU');
+            document.getElementById('counter').innerText = clicks.toLocaleString();
             document.getElementById('power-display').innerText = `${t.click}: +${power}`;
-            document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/s`;
+            document.getElementById('auto-display').innerText = `${t.auto}: +${autoPower}/с`;
             
-            document.getElementById('header-upgrades').innerText = t.upClick;
-            document.getElementById('header-skins').innerText = t.skins;
-            document.getElementById('header-volume').innerText = t.vol;
-
             let upCost = power * 1000;
             let autoCost = (autoPower + 1) * 10000;
-            document.getElementById('upgrade-btn').innerText = `${t.upClick} (${upCost.toLocaleString()})`;
-            document.getElementById('upgrade-btn').disabled = clicks < upCost;
-            document.getElementById('auto-upgrade-btn').innerText = `${t.upAuto} (${autoCost.toLocaleString()})`;
-            document.getElementById('auto-upgrade-btn').disabled = clicks < autoCost;
-
+            document.getElementById('upgrade-btn').innerText = `${t.upClick} (${upCost})`;
+            document.getElementById('auto-upgrade-btn').innerText = `${t.upAuto} (${autoCost})`;
+            
             localStorage.setItem('b_clicks', clicks);
-            localStorage.setItem('b_power', power);
-            localStorage.setItem('b_auto_power', autoPower);
             renderSkins();
         }
 
@@ -174,101 +208,35 @@
             const container = document.getElementById('skin-list');
             container.innerHTML = '';
             skinsDB.forEach(skin => {
-                const isUnlocked = unlockedSkins.includes(skin.id);
-                const isActive = currentSkin === skin.file;
                 const card = document.createElement('div');
-                card.className = `selector-card ${isActive ? 'active' : ''}`;
-                card.onclick = () => handleSkinClick(skin);
-                card.innerHTML = `
-                    <img src="${skin.file}" style="${!isUnlocked ? 'filter:grayscale(1) brightness(0.4)' : ''}">
-                    <span>${skin.name}</span>
-                    ${!isUnlocked ? `<div style="font-size:10px; color:var(--main)">${skin.price.toLocaleString()}</div>` : ''}
-                `;
+                card.className = `selector-card ${currentSkin === skin.file ? 'active' : ''}`;
+                card.onclick = () => { currentSkin = skin.file; document.getElementById('main-image').src = skin.file; updateUI(); };
+                card.innerHTML = `<img src="${skin.file}"><span>${skin.name}</span>`;
                 container.appendChild(card);
             });
         }
 
-        function handleSkinClick(skin) {
-            if (unlockedSkins.includes(skin.id)) {
-                currentSkin = skin.file;
-                document.getElementById('main-image').src = skin.file;
-                localStorage.setItem('b_skin', skin.file);
-            } else if (clicks >= skin.price) {
-                clicks -= skin.price;
-                unlockedSkins.push(skin.id);
-                localStorage.setItem('b_unlocked', JSON.stringify(unlockedSkins));
-                currentSkin = skin.file;
-                document.getElementById('main-image').src = skin.file;
-            } else {
-                showAlert(i18n[lang].alertTitle, i18n[lang].lowClicks);
-            }
-            updateUI();
-        }
-
         document.getElementById('main-image').onmousedown = (e) => {
-            if (isFrozen) return;
-            // Если выбран BG, включаем музыку при первом клике (политика браузеров)
-            if (lang === 'bg' && bgMusic.paused) bgMusic.play();
-
-            const now = Date.now();
-            const interval = now - lastClickTime;
-            clickHistory.push(interval);
-            if (clickHistory.length > 10) clickHistory.shift();
-
-            if (clickHistory.length === 10) {
-                const avg = clickHistory.reduce((a, b) => a + b) / 10;
-                const variance = clickHistory.map(x => Math.pow(x - avg, 2)).reduce((a, b) => a + b) / 10;
-                if (variance < 2 && avg < 100) { activateAntiCheat(i18n[lang].cheat); return; }
-            }
-
-            lastClickTime = now;
             clicks += power;
-            let audio = new Audio('звук нажатия.mp3');
+            let audio = new Audio(currentSound);
             audio.volume = volume;
             audio.play();
-
+            
             const p = document.createElement('div');
             p.innerText = `+${power}`; p.className = 'plus-one';
             p.style.left = e.clientX + 'px'; p.style.top = e.clientY + 'px';
             document.body.appendChild(p);
             setTimeout(() => p.remove(), 700);
-
-            e.target.style.transform = 'scale(0.85)';
-            setTimeout(() => e.target.style.transform = 'scale(1)', 50);
             updateUI();
         };
 
-        function activateAntiCheat(reason) {
-            isFrozen = true;
-            document.getElementById('main-image').style.filter = 'grayscale(1) opacity(0.3)';
-            showAlert(i18n[lang].alertTitle, `${reason} ${i18n[lang].ban}`);
-            setTimeout(() => {
-                isFrozen = false;
-                document.getElementById('main-image').style.filter = 'none';
-                closeAlert();
-                clickHistory = [];
-            }, 5000);
-        }
+        function changeVolume(v) { volume = v; bgMusic.volume = v; }
+        function setSound(s, id) { currentSound = s; }
+        function buyUpgrade() { if(clicks >= power*1000) { clicks -= power*1000; power++; updateUI(); } }
+        function buyAutoUpgrade() { if(clicks >= (autoPower+1)*10000) { clicks -= (autoPower+1)*10000; autoPower++; updateUI(); } }
 
-        setInterval(() => { if (autoPower > 0 && document.visibilityState === 'visible') { clicks += autoPower; updateUI(); } }, 1000);
-        
-        function showAlert(title, msg) {
-            document.getElementById('alert-title').innerText = title;
-            document.getElementById('alert-msg').innerText = msg;
-            document.getElementById('custom-alert').classList.add('show');
-        }
-        function closeAlert() { document.getElementById('custom-alert').classList.remove('show'); }
-        function changeVolume(v) { 
-            volume = v; 
-            localStorage.setItem('b_volume', v); 
-            bgMusic.volume = v;
-        }
-        function buyUpgrade() { let cost = power * 1000; if (clicks >= cost) { clicks -= cost; power++; updateUI(); } }
-        function buyAutoUpgrade() { let cost = (autoPower + 1) * 10000; if (clicks >= cost) { clicks -= cost; autoPower++; updateUI(); } }
-
-        // Инициализация
-        document.getElementById('main-image').src = currentSkin;
-        setLang(lang);
+        setInterval(() => { if(autoPower > 0) { clicks += autoPower; updateUI(); } }, 1000);
+        updateUI();
     </script>
 </body>
 </html>
