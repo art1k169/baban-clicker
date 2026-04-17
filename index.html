@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banana Evolution: Anti-Cheat Edition</title>
+    <style>
+        body {
+            background-color: #0f0f0f;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        .stats {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 10px;
+            color: #ffcc00;
+            text-shadow: 0 0 15px rgba(255, 204, 0, 0.5);
+        }
+
+        .warning {
+            color: #ff4444;
+            height: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            visibility: hidden;
+        }
+
+        .click-area {
+            position: relative;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        #main-image {
+            width: 320px;
+            height: 320px;
+            object-fit: contain;
+            transition: transform 0.05s ease-out;
+            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.1));
+        }
+
+        .skin-container {
+            margin-top: 30px;
+            display: flex;
+            gap: 10px;
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 20px;
+            border: 1px solid #333;
+        }
+
+        .skin-card {
+            padding: 8px;
+            border: 2px solid transparent;
+            border-radius: 15px;
+            text-align: center;
+            opacity: 0.3;
+            transition: all 0.3s;
+            cursor: not-allowed;
+            font-size: 12px;
+        }
+
+        .skin-card.unlocked {
+            opacity: 1;
+            cursor: pointer;
+            border-color: #444;
+        }
+
+        .skin-card.active {
+            border-color: #ffcc00;
+            background: rgba(255, 204, 0, 0.1);
+        }
+
+        .skin-card img {
+            width: 50px;
+            height: 50px;
+            display: block;
+            margin: 0 auto 5px;
+            border-radius: 8px;
+        }
+
+        .plus-one {
+            position: absolute;
+            color: white;
+            font-weight: bold;
+            font-size: 28px;
+            pointer-events: none;
+            z-index: 100;
+            animation: floatUp 0.6s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-120px) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="warning" id="cheat-warn">ОБНАРУЖЕН АВТОКЛИКЕР!</div>
+    <div class="stats" id="counter">0</div>
+
+    <div class="click-area" id="clicker">
+        <img src="банан.png" id="main-image">
+    </div>
+
+    <div class="skin-container">
+        <div class="skin-card active unlocked" onclick="changeSkin('банан.png', 0, this)">
+            <img src="банан.png"><span>Банан</span>
+        </div>
+        <div class="skin-card" id="skin1" onclick="changeSkin('заяц1.png', 500000, this)">
+            <img src="заяц1.png"><span>500k</span>
+        </div>
+        <div class="skin-card" id="skin2" onclick="changeSkin('заяц2.png', 1000000, this)">
+            <img src="заяц2.png"><span>1M</span>
+        </div>
+        <div class="skin-card" id="skin3" onclick="changeSkin('ишак.png', 10000000, this)">
+            <img src="ишак.png"><span>10M (ИШАК)</span>
+        </div>
+    </div>
+
+    <audio id="click-sound" src="звук нажатия.mp3"></audio>
+
+    <script>
+        // Загрузка сохранений
+        let clicks = parseInt(localStorage.getItem('banana_clicks')) || 0;
+        let currentSkin = localStorage.getItem('banana_skin') || 'банан.png';
+        
+        // Переменные для анти-чита
+        let lastClickTime = 0;
+        let clickIntervals = [];
+        let cheatDetected = false;
+
+        const counterDisplay = document.getElementById('counter');
+        const mainImage = document.getElementById('main-image');
+        const clickSound = document.getElementById('click-sound');
+        const warnDisplay = document.getElementById('cheat-warn');
+
+        // Инициализация при запуске
+        mainImage.src = currentSkin;
+        updateUI();
+
+        // Автосохранение каждую секунду
+        setInterval(() => {
+            localStorage.setItem('banana_clicks', clicks);
+            localStorage.setItem('banana_skin', currentSkin);
+            console.log("Прогресс сохранен...");
+        }, 1000);
+
+        function updateUI() {
+            counterDisplay.innerText = clicks.toLocaleString();
+            checkUnlock(500000, 'skin1');
+            checkUnlock(1000000, 'skin2');
+            checkUnlock(10000000, 'skin3');
+        }
+
+        function checkUnlock(req, id) {
+            const el = document.getElementById(id);
+            if (clicks >= req) {
+                el.classList.add('unlocked');
+                el.querySelector('span').innerText = "Разблокирован";
+            }
+        }
+
+        document.getElementById('clicker').addEventListener('mousedown', (e) => {
+            const now = Date.now();
+            const delta = now - lastClickTime;
+
+            // --- Система Анти-Автокликер ---
+            // 1. Слишком высокая скорость (быстрее 30 кликов в сек)
+            if (delta < 30) {
+                showWarning();
+                return;
+            }
+
+            // 2. Проверка на одинаковые интервалы (роботы кликают ровно)
+            clickIntervals.push(delta);
+            if (clickIntervals.length > 10) {
+                clickIntervals.shift();
+                const uniqueIntervals = new Set(clickIntervals);
+                if (uniqueIntervals.size <= 2) { // Если интервалы почти одинаковые
+                    showWarning();
+                    return;
+                }
+            }
+            
+            cheatDetected = false;
+            warnDisplay.style.visibility = 'hidden';
+            lastClickTime = now;
+
+            // Логика клика
+            clicks++;
+            clickSound.currentTime = 0;
+            clickSound.play();
+
+            createPlusAnim(e.clientX, e.clientY);
+            
+            mainImage.style.transform = 'scale(0.9) rotate(' + (Math.random() * 6 - 3) + 'deg)';
+            setTimeout(() => mainImage.style.transform = 'scale(1)', 50);
+
+            updateUI();
+        });
+
+        function showWarning() {
+            cheatDetected = true;
+            warnDisplay.style.visibility = 'visible';
+            mainImage.style.transform = 'scale(1) rotate(0)';
+        }
+
+        function createPlusAnim(x, y) {
+            const plus = document.createElement('div');
+            plus.innerText = '+1';
+            plus.className = 'plus-one';
+            plus.style.left = x - 10 + 'px';
+            plus.style.top = y - 40 + 'px';
+            document.body.appendChild(plus);
+            setTimeout(() => plus.remove(), 600);
+        }
+
+        function changeSkin(skinFile, requirement, element) {
+            if (clicks >= requirement) {
+                currentSkin = skinFile;
+                mainImage.src = skinFile;
+                document.querySelectorAll('.skin-card').forEach(card => card.classList.remove('active'));
+                element.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
